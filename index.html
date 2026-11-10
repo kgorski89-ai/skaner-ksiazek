@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14232e">
+<meta name="description" content="Skanuj kody kreskowe książek i zapisuj je w Arkuszu Google.">
+<title>Skaner książek</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --ink: #14232e; --ink-2: #1f3b4d; --paper: #f6f1e7; --card: #fffdf8; --line: #e6dccb;
+    --text: #1c2a33; --muted: #6a7780; --accent: #c2410c; --accent-2: #e2632a;
+    --ok: #2f7d4f; --warn: #b45309; --err: #b42318;
+    --r: 14px; --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--paper); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  /* Nagłówek */
+  header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: var(--ink); color: #f6f1e7; }
+  header h1 { margin: 0; font: 600 20px/1.1 var(--serif); letter-spacing: .2px; flex: 1; }
+  header h1 small { display: flex; align-items: center; gap: 6px; font: 12px/1.3 system-ui, sans-serif; color: #b9c6cd; margin-top: 3px; }
+  .kropka { width: 8px; height: 8px; border-radius: 50%; background: #7d8a92; flex: none; }
+  .kropka.ok { background: #4ade80; } .kropka.blad { background: #f87171; }
+  .ikona { background: rgba(255,255,255,.08); border: 0; border-radius: 10px; padding: 8px 10px; color: #f6f1e7; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+  .ikona svg { width: 18px; height: 18px; }
+
+  /* Kamera */
+  .kamera { position: relative; background: #0b141a; height: 44vh; min-height: 260px; max-height: 460px; overflow: hidden; }
+  .kamera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .zaslona { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; color: #d5dee3; background: radial-gradient(120% 90% at 50% 40%, #1f3b4d 0%, #0b141a 70%); }
+  .zaslona p { margin: 0; max-width: 300px; font-size: 14px; color: #a9b8c0; }
+  .ramka { position: absolute; left: 9%; right: 9%; top: 32%; bottom: 32%; border-radius: 12px; box-shadow: 0 0 0 100vmax rgba(5,10,14,.45); pointer-events: none; }
+  .ramka::before, .ramka::after { content: ""; position: absolute; inset: 0; border-radius: 12px; border: 2px solid rgba(246,241,231,.9); clip-path: polygon(0 0, 22% 0, 22% 100%, 0 100%, 0 0, 100% 0, 100% 100%, 78% 100%, 78% 0); }
+  .ramka::after { border: 0; clip-path: none; left: 6%; right: 6%; top: 50%; bottom: auto; height: 2px; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); animation: laser 1.8s ease-in-out infinite; }
+  @keyframes laser { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+  .wskazowka { position: absolute; left: 0; right: 0; top: 12%; text-align: center; color: #f6f1e7; font-size: 14px; text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
+  .blysk { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%) translateY(8px); padding: 9px 14px; border-radius: 999px; background: var(--ok); color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; }
+  .blysk.widoczny { opacity: 1; transform: translateX(-50%); }
+  .blysk.ostrz { background: var(--warn); white-space: normal; text-align: center; border-radius: 14px; }
+  .kamera.trafienie .ramka::before { border-color: #4ade80; }
+  .sterowanie { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; align-items: center; gap: 14px; }
+  .przycisk { border: 0; border-radius: 999px; padding: 13px 22px; font-weight: 700; font-size: 16px; background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(194,65,12,.35); display: inline-flex; align-items: center; gap: 8px; }
+  .przycisk:active { transform: scale(.97); }
+  .przycisk.drugi { background: rgba(246,241,231,.14); color: #f6f1e7; box-shadow: none; backdrop-filter: blur(6px); }
+  .przycisk svg { width: 20px; height: 20px; }
+  .okragly { width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .okragly.wl { background: #f6f1e7; color: var(--ink); }
+
+  /* Treść */
+  main { padding: 14px 16px calc(28px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  .karta { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+  .pole { display: flex; align-items: center; gap: 10px; }
+  .pole + .pole { margin-top: 10px; }
+  .pole label { font-size: 13px; color: var(--muted); min-width: 82px; }
+  .pole input { flex: 1; min-width: 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+  .pole input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .oprawa { margin: 12px 0; }
+  .oprawa .naglowek { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .oprawa .naglowek b { font-weight: 600; color: var(--accent); }
+  .segment { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #efe8da; border-radius: 11px; padding: 4px; }
+  .segment button { border: 0; background: transparent; border-radius: 8px; padding: 8px 2px; font-size: 13.5px; color: var(--text); }
+  .segment button[aria-checked="true"] { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; }
+  .segment.wybrana button[aria-checked="true"] { background: var(--accent); color: #fff; }
+  .okno select { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+  .maly { border: 0; border-radius: 10px; padding: 10px 14px; background: var(--ink-2); color: #fff; font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .maly.jasny { background: transparent; color: var(--accent); border: 1px solid currentColor; padding: 7px 12px; font-size: 14px; }
+  .baner { margin-top: 12px; padding: 11px 14px; border-radius: var(--r); background: #fdf0e3; border: 1px solid #f3d3b4; color: #7c3a10; font-size: 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+  .baner.info { background: #e9f1f5; border-color: #cddde6; color: #1f3b4d; }
+
+  h2 { font: 600 17px/1.2 var(--serif); margin: 22px 2px 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  h2 span { font: 13px system-ui, sans-serif; color: var(--muted); }
+  ul.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .poz { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; }
+  .okl { width: 52px; height: 74px; flex: none; border-radius: 6px; background: linear-gradient(160deg, #e7dcc7, #d6c6aa); display: flex; align-items: center; justify-content: center; overflow: hidden; color: #8a7556; }
+  .okl img { width: 100%; height: 100%; object-fit: cover; }
+  .okl svg { width: 24px; height: 24px; }
+  .tresc { flex: 1; min-width: 0; }
+  .tyt { font: 600 15.5px/1.25 var(--serif); overflow-wrap: anywhere; }
+  .aut { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 7px; font-size: 12.5px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-weight: 600; font-size: 12px; background: #eef1f3; color: #44535c; }
+  .s-dodano .chip { background: #e3f2e8; color: var(--ok); }
+  .s-duplikat .chip, .s-brak .chip { background: #fbefdc; color: var(--warn); }
+  .s-blad .chip { background: #fde7e5; color: var(--err); }
+  .s-wysyla .chip { background: #fde9df; color: var(--accent); }
+  .s-wysyla .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: puls 1s infinite; }
+  @keyframes puls { 50% { opacity: .2; } }
+  .akcje { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+  .blad-tekst { font-size: 13px; color: var(--err); margin-top: 6px; }
+  .pusto { text-align: center; color: var(--muted); font-size: 14px; padding: 18px 10px; }
+
+  /* Okna */
+  dialog { border: 0; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); background: var(--card); color: var(--text); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  dialog::backdrop { background: rgba(10,18,24,.55); }
+  .okno { padding: 18px 18px 16px; }
+  .okno h3 { margin: 0 0 4px; font: 600 19px/1.2 var(--serif); }
+  .okno p { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
+  .okno label.l { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; }
+  .okno input[type=text], .okno input[type=url], .okno input[type=password], .okno input[type=number] { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+  .przelacznik { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .przelacznik:first-of-type { margin-top: 14px; }
+  .przelacznik input { width: 22px; height: 22px; accent-color: var(--accent); }
+  .stopka { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .wynik-testu { font-size: 14px; margin-top: 10px; min-height: 1.2em; }
+  .wynik-testu.ok { color: var(--ok); } .wynik-testu.blad { color: var(--err); }
+
+  #toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; z-index: 20; max-width: 90vw; text-align: center; }
+  #toast.widoczny { opacity: 1; transform: translateX(-50%); }
+  .trzes { animation: trzes .35s; }
+  @keyframes trzes { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Moja biblioteczka
+    <small><span class="kropka" id="kropka"></span><span id="statusTekst">Nie połączono z arkuszem</span></small>
+  </h1>
+  <a class="ikona" id="btnArkusz" href="#" target="_blank" rel="noopener" hidden aria-label="Otwórz arkusz">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>Arkusz
+  </a>
+  <button class="ikona" id="btnUstawienia" aria-label="Ustawienia">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<section class="kamera" id="kamera">
+  <video id="wideo" playsinline muted autoplay></video>
+  <div class="ramka" id="ramka" hidden></div>
+  <div class="wskazowka" id="wskazowka" hidden>Ustaw kod kreskowy z tyłu książki w ramce</div>
+  <div class="zaslona" id="zaslona">
+    <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#e2632a" stroke-width="1.6"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M12.5 8v8M15 8v8M17 8v8"/></svg>
+    <p id="zaslonaTekst">Włącz aparat i skanuj kody kreskowe z tyłu okładek – jeden po drugim, bez klikania.</p>
+  </div>
+  <div class="blysk" id="blysk"></div>
+  <div class="sterowanie">
+    <button class="przycisk" id="btnStart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span>Włącz aparat</span>
+    </button>
+    <button class="przycisk drugi okragly" id="btnLatarka" hidden aria-label="Latarka">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6l-1 7h3l-6 13 1-9H8z"/></svg>
+    </button>
+  </div>
+</section>
+
+<main>
+  <div class="karta">
+    <div class="pole">
+      <label for="lokalizacja">Lokalizacja</label>
+      <input id="lokalizacja" type="text" placeholder="np. Salon – regał 2" autocomplete="off">
+    </div>
+    <div class="oprawa">
+      <div class="naglowek"><span>Oprawa</span><b id="oprawaInfo"></b></div>
+      <div class="segment" id="oprawa" role="radiogroup" aria-label="Oprawa">
+        <button type="button" role="radio" data-v="">Z katalogu</button>
+        <button type="button" role="radio" data-v="miękka">Miękka</button>
+        <button type="button" role="radio" data-v="twarda">Twarda</button>
+        <button type="button" role="radio" data-v="kartonowa" title="Książeczki dla małych dzieci ze sztywnymi kartkami">Kartonowa</button>
+      </div>
+    </div>
+    <form class="pole" id="formReczny" autocomplete="off">
+      <label for="isbnReczny">Wpisz ISBN</label>
+      <input id="isbnReczny" type="text" inputmode="numeric" placeholder="978…" enterkeyhint="send">
+      <button class="maly" type="submit">Dodaj</button>
+    </form>
+  </div>
+
+  <div class="baner info" id="banerPolacz" hidden>
+    <span>Połącz aplikację z arkuszem: w Arkuszu Google wybierz menu <b>📚 Skaner książek → 2. Połącz telefon</b> i zeskanuj kod QR aparatem telefonu.</span>
+  </div>
+  <div class="baner" id="banerKolejka" hidden>
+    <span id="banerKolejkaTekst"></span>
+    <button class="maly jasny" id="btnWyslij">Wyślij teraz</button>
+  </div>
+
+  <h2>Ostatnio zeskanowane <span id="licznik"></span></h2>
+  <ul class="lista" id="lista"></ul>
+  <div class="pusto" id="pusto">Tu pojawią się zeskanowane książki.</div>
+</main>
+
+<!-- Ustawienia -->
+<dialog id="oknoUstawienia">
+  <form class="okno" method="dialog" id="formUstawienia">
+    <h3>Ustawienia</h3>
+    <p>Najprościej połączyć się kodem QR z arkusza (menu <b>📚 Skaner książek → 2. Połącz telefon</b>). Możesz też wkleić dane ręcznie.</p>
+    <label class="l" for="ustUrl">Adres wdrożenia (kończy się na /exec)</label>
+    <input type="url" id="ustUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    <label class="l" for="ustKlucz">Klucz dostępu</label>
+    <input type="password" id="ustKlucz" placeholder="klucz z okna „Połącz telefon”" autocomplete="off">
+    <div class="przelacznik"><span>Dźwięk po zeskanowaniu</span><input type="checkbox" id="ustDzwiek"></div>
+    <div class="przelacznik"><span>Wibracja po zeskanowaniu</span><input type="checkbox" id="ustWibracje"></div>
+    <div class="wynik-testu" id="wynikTestu"></div>
+    <div class="stopka">
+      <button class="maly jasny" type="button" id="btnTest">Sprawdź połączenie</button>
+      <button class="maly" type="submit" value="zapisz">Zapisz</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Ręczne uzupełnienie -->
+<dialog id="oknoReczne">
+  <form class="okno" method="dialog" id="formReczne">
+    <h3>Uzupełnij dane książki</h3>
+    <p>Nie znalazłem tej książki w katalogach. Wpisz to, co widzisz na okładce – reszta jest opcjonalna.</p>
+    <label class="l">ISBN</label>
+    <input type="text" id="recIsbn" readonly>
+    <label class="l" for="recTytul">Tytuł *</label>
+    <input type="text" id="recTytul" required>
+    <label class="l" for="recAutor">Autor</label>
+    <input type="text" id="recAutor">
+    <label class="l" for="recWyd">Wydawnictwo</label>
+    <input type="text" id="recWyd">
+    <label class="l" for="recRok">Rok wydania</label>
+    <input type="number" id="recRok" inputmode="numeric" min="1400" max="2100">
+    <label class="l" for="recGatunek">Gatunek</label>
+    <input type="text" id="recGatunek" placeholder="np. powieść, reportaż, poradnik">
+    <label class="l" for="recStrony">Liczba stron (do szacowania grzbietu)</label>
+    <input type="number" id="recStrony" inputmode="numeric" min="1" max="20000" placeholder="numer ostatniej strony">
+    <label class="l" for="recOprawa">Oprawa</label>
+    <select id="recOprawa"><option value="">nie wiem</option><option value="miękka">miękka</option><option value="twarda">twarda</option><option value="kartonowa">kartonowa (sztywne kartki)</option></select>
+    <div class="stopka">
+      <button class="maly jasny" type="button" id="btnAnulujReczne">Anuluj</button>
+      <button class="maly" type="submit" value="zapisz">Zapisz w arkuszu</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ==================== Stan i pamięć telefonu ==================== */
+const KLUCZE = { cfg: 'skaner.cfg', lista: 'skaner.lista', lok: 'skaner.lokalizacja', oprawa: 'skaner.oprawa' };
+const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.23.0/umd/index.min.js';
+const MAX_HISTORIA = 80;
+
+function wczytaj(k, domyslnie) {
+  try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : domyslnie; } catch (e) { return domyslnie; }
+}
+function zapisz(k, v) {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* pełna pamięć – trudno */ }
+}
+
+let cfg = Object.assign({ url: '', key: '', dzwiek: true, wibracje: true, arkuszUrl: '', arkuszNazwa: '' }, wczytaj(KLUCZE.cfg, {}));
+let lista = wczytaj(KLUCZE.lista, []);
+lista.forEach(p => { if (p.status === 'wysyla') p.status = 'czeka'; });
+
+const $ = s => document.querySelector(s);
+const el = {
+  wideo: $('#wideo'), kamera: $('#kamera'), ramka: $('#ramka'), wskazowka: $('#wskazowka'), zaslona: $('#zaslona'),
+  zaslonaTekst: $('#zaslonaTekst'), blysk: $('#blysk'), btnStart: $('#btnStart'), btnLatarka: $('#btnLatarka'),
+  lokalizacja: $('#lokalizacja'), formReczny: $('#formReczny'), isbnReczny: $('#isbnReczny'),
+  lista: $('#lista'), pusto: $('#pusto'), licznik: $('#licznik'),
+  banerPolacz: $('#banerPolacz'), banerKolejka: $('#banerKolejka'), banerKolejkaTekst: $('#banerKolejkaTekst'), btnWyslij: $('#btnWyslij'),
+  kropka: $('#kropka'), statusTekst: $('#statusTekst'), btnArkusz: $('#btnArkusz'), btnUstawienia: $('#btnUstawienia'),
+  oknoUstawienia: $('#oknoUstawienia'), ustUrl: $('#ustUrl'), ustKlucz: $('#ustKlucz'), ustDzwiek: $('#ustDzwiek'),
+  ustWibracje: $('#ustWibracje'), btnTest: $('#btnTest'), wynikTestu: $('#wynikTestu'), formUstawienia: $('#formUstawienia'),
+  oknoReczne: $('#oknoReczne'), formReczne: $('#formReczne'), recIsbn: $('#recIsbn'), recTytul: $('#recTytul'),
+  recAutor: $('#recAutor'), recWyd: $('#recWyd'), recRok: $('#recRok'), recGatunek: $('#recGatunek'), recStrony: $('#recStrony'), recOprawa: $('#recOprawa'), oprawa: $('#oprawa'), oprawaInfo: $('#oprawaInfo'),
+  btnAnulujReczne: $('#btnAnulujReczne'), toast: $('#toast')
+};
+
+/* ==================== ISBN ==================== */
+function cyfraEan(d12) { let s = 0; for (let i = 0; i < 12; i++) s += +d12[i] * (i % 2 ? 3 : 1); return String((10 - s % 10) % 10); }
+function cyfraIsbn10(d9) { let s = 0; for (let i = 0; i < 9; i++) s += +d9[i] * (10 - i); const c = (11 - s % 11) % 11; return c === 10 ? 'X' : String(c); }
+function normalizujIsbn(wejscie) {
+  const s = String(wejscie || '').toUpperCase().replace(/[^0-9X]/g, '');
+  if (/^\d{13}$/.test(s)) return /^97[89]/.test(s) && cyfraEan(s.slice(0, 12)) === s[12] ? s : null;
+  if (/^\d{9}[\dX]$/.test(s) && cyfraIsbn10(s.slice(0, 9)) === s[9]) { const b = '978' + s.slice(0, 9); return b + cyfraEan(b); }
+  return null;
+}
+function formatujIsbn(i) { return String(i || ''); }
+
+/* ==================== Konfiguracja z linku (kod QR z arkusza) ==================== */
+function konfiguracjaZLinku() {
+  if (!location.hash || location.hash.length < 4) return false;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const u = p.get('u'), k = p.get('k');
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!u || !k) return false;
+  cfg.url = u.trim(); cfg.key = k.trim();
+  zapisz(KLUCZE.cfg, cfg);
+  setTimeout(() => pokazToast('Połączono z arkuszem ✓'), 300);
+  return true;
+}
+konfiguracjaZLinku();
+window.addEventListener('hashchange', () => {
+  if (konfiguracjaZLinku()) { blokadaKlucza = false; sprawdzPolaczenie(true); }
+});
+
+/* ==================== Komunikacja z arkuszem ==================== */
+class BladSieci extends Error {}
+
+async function api(dane) {
+  if (!cfg.url || !cfg.key) throw new Error('Najpierw połącz aplikację z arkuszem.');
+  const ctrl = new AbortController();
+  const zegar = setTimeout(() => ctrl.abort(), 60000);
+  let odp;
+  try {
+    odp = await fetch(cfg.url, { method: 'POST', body: JSON.stringify(Object.assign({}, dane, { key: cfg.key })), signal: ctrl.signal, redirect: 'follow' });
+  } catch (e) {
+    throw new BladSieci(navigator.onLine === false ? 'Brak internetu.' : 'Nie udało się połączyć z arkuszem.');
+  } finally {
+    clearTimeout(zegar);
+  }
+  if (!odp.ok) throw new BladSieci('Arkusz odpowiedział błędem ' + odp.status + '.');
+  const tekst = await odp.text();
+  try { return JSON.parse(tekst); }
+  catch (e) { throw new Error('Arkusz zwrócił nieoczekiwaną odpowiedź. Sprawdź, czy wdrożenie ma dostęp „Każdy”.'); }
+}
+
+function ustawStatus(stan, tekst) {
+  el.kropka.className = 'kropka' + (stan === 'ok' ? ' ok' : stan === 'blad' ? ' blad' : '');
+  el.statusTekst.textContent = tekst;
+}
+
+async function sprawdzPolaczenie(cicho) {
+  if (!cfg.url || !cfg.key) { ustawStatus('', 'Nie połączono z arkuszem'); odswiezBanery(); return false; }
+  try {
+    const r = await api({ action: 'ping' });
+    if (!r.ok) { ustawStatus('blad', 'Błąd połączenia'); if (!cicho) pokazToast(r.blad); return r; }
+    cfg.arkuszUrl = r.url || ''; cfg.arkuszNazwa = r.arkusz || '';
+    zapisz(KLUCZE.cfg, cfg);
+    ustawStatus('ok', '„' + (r.arkusz || 'Arkusz') + '” · książek: ' + r.liczba);
+    pokazArkuszLink();
+    przetwarzaj();
+    return r;
+  } catch (e) {
+    ustawStatus('blad', e instanceof BladSieci ? 'Brak połączenia' : 'Błąd połączenia');
+    if (!cicho) pokazToast(e.message);
+    return { ok: false, blad: e.message };
+  } finally {
+    odswiezBanery();
+  }
+}
+
+function pokazArkuszLink() {
+  el.btnArkusz.hidden = !cfg.arkuszUrl;
+  if (cfg.arkuszUrl) el.btnArkusz.href = cfg.arkuszUrl;
+}
+
+/* ==================== Kolejka ==================== */
+let pracuje = false;
+let zegarPonowienia = null;
+let blokadaKlucza = false;
+
+function zapiszListe() {
+  const czekajace = lista.filter(p => p.status === 'czeka' || p.status === 'wysyla');
+  const reszta = lista.filter(p => p.status !== 'czeka' && p.status !== 'wysyla');
+  if (lista.length > MAX_HISTORIA) {
+    const zostaw = new Set(czekajace.concat(reszta.slice(0, Math.max(0, MAX_HISTORIA - czekajace.length))));
+    lista = lista.filter(p => zostaw.has(p));
+  }
+  zapisz(KLUCZE.lista, lista);
+}
+
+function dodajDoKolejki(isbn13, zrodlo) {
+  if (lista.some(p => p.isbn === isbn13 && (p.status === 'czeka' || p.status === 'wysyla'))) {
+    pokazToast('Ta książka już czeka w kolejce');
+    return;
+  }
+  lista.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), isbn: isbn13, lok: el.lokalizacja.value.trim(), oprawa: oprawaWybrana, status: 'czeka', czas: Date.now(), zrodlo: zrodlo });
+  zapiszListe(); render(); przetwarzaj();
+}
+
+async function przetwarzaj() {
+  if (pracuje || blokadaKlucza || !cfg.url || !cfg.key) { odswiezBanery(); return; }
+  pracuje = true;
+  clearTimeout(zegarPonowienia);
+  try {
+    for (;;) {
+      const poz = lista.slice().reverse().find(p => p.status === 'czeka');
+      if (!poz) break;
+      poz.status = 'wysyla'; poz.blad = ''; render();
+      try {
+        const odp = poz.reczna
+          ? await api({ action: 'save', ksiazka: poz.reczna, location: poz.lok, binding: poz.oprawa || '' })
+          : await api({ action: 'add', isbn: poz.isbn, location: poz.lok, force: !!poz.force, binding: poz.oprawa || '' });
+        if (!odp.ok) {
+          if (odp.kod === 'klucz' || odp.kod === 'konfiguracja') {
+            poz.status = 'czeka'; blokadaKlucza = true;
+            ustawStatus('blad', 'Połącz ponownie z arkuszem');
+            pokazToast(odp.blad);
+            break;
+          }
+          poz.status = 'blad'; poz.blad = odp.blad || 'Nieznany błąd.';
+        } else {
+          poz.status = odp.status; poz.ksiazka = odp.ksiazka || null; poz.wiersz = odp.wiersz || null;
+          if (odp.status === 'dodano') { poz.reczna = null; poz.force = false; }
+          if (cfg.url) ustawStatus('ok', '„' + (cfg.arkuszNazwa || 'Arkusz') + '” · połączono');
+        }
+      } catch (e) {
+        if (e instanceof BladSieci) {
+          poz.status = 'czeka';
+          ustawStatus('blad', 'Brak połączenia – spróbuję ponownie');
+          zegarPonowienia = setTimeout(przetwarzaj, 20000);
+          break;
+        }
+        poz.status = 'blad'; poz.blad = e.message;
+      }
+      zapiszListe(); render();
+    }
+  } finally {
+    pracuje = false;
+    zapiszListe(); render();
+  }
+}
+
+function odswiezBanery() {
+  const polaczony = !!(cfg.url && cfg.key);
+  el.banerPolacz.hidden = polaczony;
+  const ile = lista.filter(p => p.status === 'czeka').length;
+  el.banerKolejka.hidden = ile === 0;
+  if (ile) {
+    el.banerKolejkaTekst.textContent = !polaczony
+      ? `Książek w kolejce: ${ile}. Wyślę je, gdy połączysz aplikację z arkuszem.`
+      : blokadaKlucza ? `Książek w kolejce: ${ile}. Klucz jest nieaktualny – połącz telefon ponownie.`
+      : `Książek w kolejce: ${ile}. Wyślę je, gdy wróci połączenie.`;
+    el.btnWyslij.hidden = !polaczony || blokadaKlucza || pracuje;
+  }
+}
+
+window.addEventListener('online', () => przetwarzaj());
+
+/* ==================== Lista na ekranie ==================== */
+const ETYKIETY = {
+  czeka: 'W kolejce', wysyla: 'Szukam danych…', dodano: 'Dodano', duplikat: 'Już jest w arkuszu',
+  brak: 'Nie znaleziono danych', blad: 'Błąd'
+};
+const IKONA_KSIAZKI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>';
+
+function opisGrzbietu(k, p) {
+  const opr = k.oprawa || p.oprawa || '';
+  const mm = Number(k.grzbiet);
+  if (!opr && !mm) return '';
+  const przybl = mm && !/pomiar|katalog/.test(k.grzbietSkad || '') ? '~' : '';
+  return `<span>· ${esc([opr, mm ? przybl + mm + ' mm grzbietu' : ''].filter(Boolean).join(', '))}</span>`;
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function render() {
+  el.pusto.hidden = lista.length > 0;
+  const dodane = lista.filter(p => p.status === 'dodano').length;
+  el.licznik.textContent = lista.length ? `dodane: ${dodane}` : '';
+  el.lista.innerHTML = lista.map(p => {
+    const k = p.ksiazka || {};
+    const tytul = k.tytul || (p.reczna && p.reczna.tytul) || 'ISBN ' + formatujIsbn(p.isbn);
+    const autor = [k.autor, k.rok].filter(Boolean).join(' · ');
+    const okl = k.okladka && /^https:\/\//.test(k.okladka)
+      ? `<img src="${esc(k.okladka)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createRange().createContextualFragment(IKONA_KSIAZKI))">`
+      : IKONA_KSIAZKI;
+    let etykieta = ETYKIETY[p.status] || p.status;
+    if (p.wiersz && (p.status === 'dodano' || p.status === 'duplikat')) etykieta += ' · wiersz ' + p.wiersz;
+    let akcje = '';
+    if (p.status === 'duplikat') akcje = `<button class="maly jasny" data-akcja="egzemplarz" data-id="${p.id}">Dodaj kolejny egzemplarz</button>`;
+    if (p.status === 'brak') akcje = `<button class="maly jasny" data-akcja="recznie" data-id="${p.id}">Wpisz dane ręcznie</button>`;
+    if (p.status === 'blad') akcje = `<button class="maly jasny" data-akcja="ponow" data-id="${p.id}">Spróbuj ponownie</button>`;
+    return `<li class="poz s-${p.status}">
+      <div class="okl">${okl}</div>
+      <div class="tresc">
+        <div class="tyt">${esc(tytul)}</div>
+        ${autor ? `<div class="aut">${esc(autor)}</div>` : ''}
+        <div class="meta"><span class="chip">${esc(etykieta)}</span><span>${esc(formatujIsbn(p.isbn))}</span>${p.lok ? `<span>· ${esc(p.lok)}</span>` : ''}${opisGrzbietu(k, p)}</div>
+        ${p.blad ? `<div class="blad-tekst">${esc(p.blad)}</div>` : ''}
+        ${akcje ? `<div class="akcje">${akcje}</div>` : ''}
+      </div>
+    </li>`;
+  }).join('');
+  odswiezBanery();
+}
+
+el.lista.addEventListener('click', e => {
+  const b = e.target.closest('button[data-akcja]');
+  if (!b) return;
+  const p = lista.find(x => x.id === b.dataset.id);
+  if (!p) return;
+  if (b.dataset.akcja === 'egzemplarz') { p.force = true; p.status = 'czeka'; }
+  if (b.dataset.akcja === 'ponow') { p.status = 'czeka'; p.blad = ''; }
+  if (b.dataset.akcja === 'recznie') { otworzReczne(p); return; }
+  zapiszListe(); render(); przetwarzaj();
+});
+
+el.btnWyslij.addEventListener('click', () => { blokadaKlucza = false; przetwarzaj(); });
+
+/* ==================== Ręczne uzupełnianie ==================== */
+let edytowana = null;
+function otworzReczne(p) {
+  edytowana = p;
+  const r = p.reczna || {};
+  el.recIsbn.value = formatujIsbn(p.isbn);
+  el.recTytul.value = r.tytul || ''; el.recAutor.value = r.autor || ''; el.recWyd.value = r.wydawnictwo || '';
+  el.recRok.value = r.rok || ''; el.recGatunek.value = r.gatunek || '';
+  el.recStrony.value = r.strony || ''; el.recOprawa.value = r.oprawa || p.oprawa || '';
+  el.oknoReczne.showModal();
+  setTimeout(() => el.recTytul.focus(), 50);
+}
+el.btnAnulujReczne.addEventListener('click', () => el.oknoReczne.close());
+el.formReczne.addEventListener('submit', e => {
+  if (!edytowana) return;
+  const tytul = el.recTytul.value.trim();
+  if (!tytul) { e.preventDefault(); el.recTytul.classList.add('trzes'); setTimeout(() => el.recTytul.classList.remove('trzes'), 400); return; }
+  edytowana.reczna = { isbn: edytowana.isbn, tytul, autor: el.recAutor.value.trim(), wydawnictwo: el.recWyd.value.trim(), rok: el.recRok.value.trim(), gatunek: el.recGatunek.value.trim(), strony: el.recStrony.value.trim(), oprawa: el.recOprawa.value };
+  edytowana.ksiazka = { tytul: edytowana.reczna.tytul, autor: edytowana.reczna.autor, rok: edytowana.reczna.rok };
+  edytowana.status = 'czeka';
+  edytowana = null;
+  zapiszListe(); render(); przetwarzaj();
+});
+
+/* ==================== Ręczne wpisanie ISBN ==================== */
+el.formReczny.addEventListener('submit', e => {
+  e.preventDefault();
+  const isbn = normalizujIsbn(el.isbnReczny.value);
+  if (!isbn) {
+    el.isbnReczny.classList.add('trzes'); setTimeout(() => el.isbnReczny.classList.remove('trzes'), 400);
+    pokazToast('To nie jest poprawny ISBN (10 lub 13 cyfr)');
+    return;
+  }
+  el.isbnReczny.value = '';
+  dodajDoKolejki(isbn, 'recznie');
+  pokazToast('Dodano do kolejki: ' + formatujIsbn(isbn));
+});
+
+/* ==================== Lokalizacja ==================== */
+el.lokalizacja.value = wczytaj(KLUCZE.lok, '');
+el.lokalizacja.addEventListener('change', () => zapisz(KLUCZE.lok, el.lokalizacja.value.trim()));
+
+/* ==================== Oprawa kolejnych książek ==================== */
+let oprawaWybrana = wczytaj(KLUCZE.oprawa, '');
+function pokazOprawe() {
+  el.oprawa.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === oprawaWybrana)));
+  el.oprawa.classList.toggle('wybrana', !!oprawaWybrana);
+  el.oprawaInfo.textContent = oprawaWybrana ? 'dla każdej kolejnej książki' : '';
+}
+el.oprawa.addEventListener('click', e => {
+  const b = e.target.closest('button[data-v]');
+  if (!b) return;
+  oprawaWybrana = b.dataset.v;
+  zapisz(KLUCZE.oprawa, oprawaWybrana);
+  pokazOprawe();
+});
+pokazOprawe();
+
+/* ==================== Skaner ==================== */
+const skaner = { strumien: null, detektor: null, zx: null, aktywny: false, zegar: null, ostatni: { kod: '', czas: 0 }, ostrzezenie: 0, latarka: false, wakeLock: null, wznowic: false };
+const plotno = document.createElement('canvas');
+let audio = null;
+
+async function startAparatu() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    el.zaslonaTekst.textContent = 'Ta przeglądarka nie daje dostępu do aparatu. Otwórz aplikację w Chrome albo wpisz ISBN ręcznie.';
+    return;
+  }
+  el.btnStart.disabled = true;
+  try {
+    skaner.strumien = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+  } catch (e) {
+    el.btnStart.disabled = false;
+    el.zaslonaTekst.textContent = e && e.name === 'NotAllowedError'
+      ? 'Brak zgody na aparat. Stuknij ikonę obok adresu strony (lub ustawienia aplikacji) i zezwól na aparat.'
+      : 'Nie udało się włączyć aparatu' + (e && e.message ? ': ' + e.message : '.');
+    return;
+  }
+  el.wideo.srcObject = skaner.strumien;
+  try { await el.wideo.play(); } catch (e) { /* autoplay */ }
+  const sciezka = skaner.strumien.getVideoTracks()[0];
+  try { await sciezka.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) { /* nie każdy telefon */ }
+  let mozliwosci = {};
+  try { mozliwosci = sciezka.getCapabilities ? sciezka.getCapabilities() : {}; } catch (e) { mozliwosci = {}; }
+  el.btnLatarka.hidden = !mozliwosci.torch;
+  skaner.latarka = false; el.btnLatarka.classList.remove('wl');
+
+  try { await przygotujDetektor(); }
+  catch (e) {
+    zatrzymajAparat();
+    el.zaslonaTekst.textContent = 'Nie udało się uruchomić czytnika kodów (potrzebny internet przy pierwszym uruchomieniu). Wpisz ISBN ręcznie.';
+    return;
+  }
+  skaner.aktywny = true;
+  el.btnStart.disabled = false;
+  el.zaslona.hidden = true; el.ramka.hidden = false; el.wskazowka.hidden = false;
+  el.btnStart.querySelector('span').textContent = 'Zatrzymaj';
+  el.btnStart.classList.add('drugi');
+  try { if ('wakeLock' in navigator) skaner.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { skaner.wakeLock = null; }
+  petla();
+}
+
+function zatrzymajAparat() {
+  skaner.aktywny = false;
+  clearTimeout(skaner.zegar);
+  if (skaner.strumien) skaner.strumien.getTracks().forEach(t => t.stop());
+  skaner.strumien = null;
+  el.wideo.srcObject = null;
+  el.zaslona.hidden = false; el.ramka.hidden = true; el.wskazowka.hidden = true; el.btnLatarka.hidden = true;
+  el.btnStart.disabled = false;
+  el.btnStart.querySelector('span').textContent = 'Włącz aparat';
+  el.btnStart.classList.remove('drugi');
+  if (skaner.wakeLock) { skaner.wakeLock.release().catch(() => {}); skaner.wakeLock = null; }
+}
+
+async function przygotujDetektor() {
+  if (skaner.detektor || skaner.zx) return;
+  if ('BarcodeDetector' in window) {
+    try {
+      const formaty = await window.BarcodeDetector.getSupportedFormats();
+      if (formaty.includes('ean_13')) { skaner.detektor = new window.BarcodeDetector({ formats: ['ean_13'] }); return; }
+    } catch (e) { /* przejdź do ZXing */ }
+  }
+  await new Promise((ok, nie) => {
+    if (window.ZXing) return ok();
+    const s = document.createElement('script');
+    s.src = ZXING_URL; s.async = true; s.onload = ok; s.onerror = () => nie(new Error('ZXing'));
+    document.head.appendChild(s);
+  });
+  const Z = window.ZXing;
+  const wskazowki = new Map();
+  wskazowki.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13]);
+  wskazowki.set(Z.DecodeHintType.TRY_HARDER, true);
+  skaner.zx = new Z.MultiFormatReader();
+  skaner.zx.setHints(wskazowki);
+}
+
+function dekodujZXing() {
+  const v = el.wideo, Z = window.ZXing;
+  if (!v.videoWidth) return null;
+  const sw = Math.round(v.videoWidth * 0.84), sh = Math.round(v.videoHeight * 0.42);
+  const sx = Math.round((v.videoWidth - sw) / 2), sy = Math.round((v.videoHeight - sh) / 2);
+  const skala = Math.min(1, 800 / sw);
+  plotno.width = Math.round(sw * skala); plotno.height = Math.round(sh * skala);
+  const ctx = plotno.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, plotno.width, plotno.height);
+  try {
+    const bmp = new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(plotno)));
+    return skaner.zx.decodeWithState(bmp).getText();
+  } catch (e) { return null; }
+}
+
+async function petla() {
+  if (!skaner.aktywny) return;
+  if (el.wideo.readyState >= 2) {
+    try {
+      if (skaner.detektor) {
+        const wyniki = await skaner.detektor.detect(el.wideo);
+        wyniki.forEach(w => obsluzKod(w.rawValue));
+      } else if (skaner.zx) {
+        const k = dekodujZXing();
+        if (k) obsluzKod(k);
+      }
+    } catch (e) { /* pojedyncza klatka – pomijamy */ }
+  }
+  skaner.zegar = setTimeout(petla, skaner.detektor ? 110 : 220);
+}
+
+function obsluzKod(surowy) {
+  const kod = String(surowy || '').replace(/\D/g, '');
+  const teraz = Date.now();
+  if (kod === skaner.ostatni.kod && teraz - skaner.ostatni.czas < 4000) { skaner.ostatni.czas = teraz; return; }
+  const isbn = normalizujIsbn(kod);
+  if (!isbn) {
+    if (teraz - skaner.ostrzezenie > 3500) {
+      skaner.ostrzezenie = teraz;
+      blysk('To nie kod książki – szukaj kodu zaczynającego się od 978 lub 979', true);
+    }
+    return;
+  }
+  skaner.ostatni = { kod, czas: teraz };
+  sygnal();
+  blysk('✓ ' + formatujIsbn(isbn));
+  dodajDoKolejki(isbn, 'aparat');
+}
+
+let zegarBlysku = null;
+function blysk(tekst, ostrzezenie) {
+  el.blysk.textContent = tekst;
+  el.blysk.classList.toggle('ostrz', !!ostrzezenie);
+  el.blysk.classList.add('widoczny');
+  if (!ostrzezenie) { el.kamera.classList.add('trafienie'); }
+  clearTimeout(zegarBlysku);
+  zegarBlysku = setTimeout(() => { el.blysk.classList.remove('widoczny'); el.kamera.classList.remove('trafienie'); }, ostrzezenie ? 2600 : 1400);
+}
+
+function sygnal() {
+  if (cfg.wibracje && navigator.vibrate) navigator.vibrate(60);
+  if (!cfg.dzwiek || !audio) return;
+  try {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sine'; o.frequency.value = 1320;
+    g.gain.setValueAtTime(0.0001, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, audio.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.12);
+    o.connect(g).connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + 0.13);
+  } catch (e) { /* bez dźwięku */ }
+}
+
+el.btnStart.addEventListener('click', () => {
+  if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; } }
+  if (audio && audio.state === 'suspended') audio.resume();
+  skaner.aktywny ? zatrzymajAparat() : startAparatu();
+});
+
+el.btnLatarka.addEventListener('click', async () => {
+  const sciezka = skaner.strumien && skaner.strumien.getVideoTracks()[0];
+  if (!sciezka) return;
+  try {
+    await sciezka.applyConstraints({ advanced: [{ torch: !skaner.latarka }] });
+    skaner.latarka = !skaner.latarka;
+    el.btnLatarka.classList.toggle('wl', skaner.latarka);
+  } catch (e) { pokazToast('Latarka niedostępna'); }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && skaner.aktywny) { skaner.wznowic = true; zatrzymajAparat(); }
+  else if (!document.hidden && skaner.wznowic) { skaner.wznowic = false; startAparatu(); }
+});
+
+/* ==================== Ustawienia ==================== */
+el.btnUstawienia.addEventListener('click', () => {
+  el.ustUrl.value = cfg.url; el.ustKlucz.value = cfg.key;
+  el.ustDzwiek.checked = !!cfg.dzwiek; el.ustWibracje.checked = !!cfg.wibracje;
+  el.wynikTestu.textContent = ''; el.wynikTestu.className = 'wynik-testu';
+  el.oknoUstawienia.showModal();
+});
+
+function przejmijUstawienia() {
+  cfg.url = el.ustUrl.value.trim(); cfg.key = el.ustKlucz.value.trim();
+  cfg.dzwiek = el.ustDzwiek.checked; cfg.wibracje = el.ustWibracje.checked;
+  blokadaKlucza = false;
+  zapisz(KLUCZE.cfg, cfg);
+}
+
+el.btnTest.addEventListener('click', async () => {
+  przejmijUstawienia();
+  el.wynikTestu.className = 'wynik-testu'; el.wynikTestu.textContent = 'Sprawdzam…';
+  const r = await sprawdzPolaczenie(true);
+  if (r && r.ok) { el.wynikTestu.className = 'wynik-testu ok'; el.wynikTestu.textContent = `Działa! Arkusz „${r.arkusz}”, książek: ${r.liczba}.`; }
+  else { el.wynikTestu.className = 'wynik-testu blad'; el.wynikTestu.textContent = (r && r.blad) || 'Uzupełnij adres i klucz.'; }
+});
+
+el.formUstawienia.addEventListener('submit', () => {
+  przejmijUstawienia();
+  sprawdzPolaczenie(true);
+});
+
+/* ==================== Drobiazgi ==================== */
+let zegarToastu = null;
+function pokazToast(t) {
+  el.toast.textContent = t;
+  el.toast.classList.add('widoczny');
+  clearTimeout(zegarToastu);
+  zegarToastu = setTimeout(() => el.toast.classList.remove('widoczny'), 2800);
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* ==================== Start ==================== */
+pokazArkuszLink();
+render();
+sprawdzPolaczenie(true);
+</script>
+</body>
+</html>
