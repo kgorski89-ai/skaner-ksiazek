@@ -1,6 +1,6 @@
 // Skaner książek – service worker: aplikacja uruchamia się także bez internetu
 // (zeskanowane książki czekają wtedy w kolejce na telefonie).
-const WERSJA = 'skaner-v1';
+const WERSJA = 'skaner-v4';
 const PLIKI = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

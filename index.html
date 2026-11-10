@@ -62,6 +62,18 @@
   .pole input { flex: 1; min-width: 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 16px; }
   .pole input:focus { outline: 2px solid var(--accent); border-color: transparent; }
   .oprawa { margin: 12px 0; }
+  .rzadko { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; padding: 9px 12px; border-radius: 11px; background: #efe8da; cursor: pointer; transition: background .2s; }
+  .rzadko .tekst { display: flex; flex-direction: column; font-size: 14.5px; }
+  .rzadko small { font-size: 12px; color: var(--muted); }
+  .rzadko input { appearance: none; -webkit-appearance: none; width: 44px; height: 26px; border-radius: 999px; background: #cfc6b4; position: relative; flex: none; margin: 0; cursor: pointer; transition: background .2s; }
+  .rzadko input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+  .rzadko input:checked { background: var(--accent); }
+  .rzadko input:checked::after { transform: translateX(18px); }
+  .rzadko input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .rzadko.wl { background: #fde9df; }
+  .rzadko.wl small { color: var(--accent); font-weight: 600; }
+  .okno .l-check { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-size: 15px; }
+  .okno .l-check input { width: 20px; height: 20px; accent-color: var(--accent); }
   .oprawa .naglowek { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
   .oprawa .naglowek b { font-weight: 600; color: var(--accent); }
   .segment { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #efe8da; border-radius: 11px; padding: 4px; }
@@ -95,6 +107,29 @@
   .akcje { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
   .blad-tekst { font-size: 13px; color: var(--err); margin-top: 6px; }
   .pusto { text-align: center; color: var(--muted); font-size: 14px; padding: 18px 10px; }
+  .s-poprawiono .chip { background: #e3f2e8; color: var(--ok); }
+  .s-usunieto .chip { background: #eef1f3; color: #6a7780; }
+  .s-usunieto .tyt { text-decoration: line-through; color: var(--muted); }
+  .link-przycisk { display: block; width: 100%; margin-top: 10px; border: 0; background: none; padding: 4px 0; text-align: left; font-size: 14px; color: var(--muted); }
+  .link-przycisk b { color: var(--accent); }
+  dialog { overflow-y: auto; }
+  .okno small { font-weight: normal; color: var(--muted); }
+  .wiersz-pola { display: flex; gap: 8px; align-items: stretch; }
+  .wiersz-pola input { flex: 1; min-width: 0; }
+  .dwa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .maly.pelny { width: 100%; margin-top: 10px; }
+  .maly:disabled { opacity: .55; }
+  .wyniki { margin-top: 10px; display: grid; gap: 8px; max-height: 280px; overflow-y: auto; }
+  .wyniki .info { font-size: 13.5px; color: var(--muted); padding: 2px; }
+  .wynik { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 11px; width: 100%; display: grid; gap: 2px; }
+  .wynik b { font: 600 15px/1.25 var(--serif); }
+  .wynik span { color: var(--muted); font-size: 12.5px; }
+  .wynik.wybrany { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194,65,12,.18); }
+  .komunikat { font-size: 14px; margin-top: 12px; min-height: 1em; color: var(--muted); }
+  .komunikat.ok { color: var(--ok); } .komunikat.blad { color: var(--err); } .komunikat.uwaga { color: var(--warn); }
+  .stopka .odstep { flex: 1; }
+  .maly.usun { background: transparent; color: var(--err); border: 1px solid currentColor; padding: 7px 12px; font-size: 14px; }
+  .maly.usun.potwierdz { background: var(--err); color: #fff; border-color: var(--err); }
 
   /* Okna */
   dialog { border: 0; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); background: var(--card); color: var(--text); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
@@ -166,11 +201,16 @@
         <button type="button" role="radio" data-v="kartonowa" title="Książeczki dla małych dzieci ze sztywnymi kartkami">Kartonowa</button>
       </div>
     </div>
+    <label class="rzadko" id="rzadkoWiersz" for="rzadko">
+      <span class="tekst"><span>Rzadko używane</span><small id="rzadkoInfo">na dolne półki – włącz dla kolejnych książek</small></span>
+      <input type="checkbox" id="rzadko" role="switch">
+    </label>
     <form class="pole" id="formReczny" autocomplete="off">
       <label for="isbnReczny">Wpisz ISBN</label>
       <input id="isbnReczny" type="text" inputmode="numeric" placeholder="978…" enterkeyhint="send">
       <button class="maly" type="submit">Dodaj</button>
     </form>
+    <button type="button" class="link-przycisk" id="btnBezIsbn">Książka bez kodu kreskowego i ISBN? <b>Dodaj ją ręcznie</b></button>
   </div>
 
   <div class="baner info" id="banerPolacz" hidden>
@@ -205,30 +245,45 @@
   </form>
 </dialog>
 
-<!-- Ręczne uzupełnienie -->
-<dialog id="oknoReczne">
-  <form class="okno" method="dialog" id="formReczne">
-    <h3>Uzupełnij dane książki</h3>
-    <p>Nie znalazłem tej książki w katalogach. Wpisz to, co widzisz na okładce – reszta jest opcjonalna.</p>
-    <label class="l">ISBN</label>
-    <input type="text" id="recIsbn" readonly>
-    <label class="l" for="recTytul">Tytuł *</label>
-    <input type="text" id="recTytul" required>
-    <label class="l" for="recAutor">Autor</label>
-    <input type="text" id="recAutor">
-    <label class="l" for="recWyd">Wydawnictwo</label>
-    <input type="text" id="recWyd">
-    <label class="l" for="recRok">Rok wydania</label>
-    <input type="number" id="recRok" inputmode="numeric" min="1400" max="2100">
-    <label class="l" for="recGatunek">Gatunek</label>
-    <input type="text" id="recGatunek" placeholder="np. powieść, reportaż, poradnik">
-    <label class="l" for="recStrony">Liczba stron (do szacowania grzbietu)</label>
-    <input type="number" id="recStrony" inputmode="numeric" min="1" max="20000" placeholder="numer ostatniej strony">
-    <label class="l" for="recOprawa">Oprawa</label>
-    <select id="recOprawa"><option value="">nie wiem</option><option value="miękka">miękka</option><option value="twarda">twarda</option><option value="kartonowa">kartonowa (sztywne kartki)</option></select>
+<!-- Książka: dodawanie bez ISBN, uzupełnianie i poprawianie -->
+<dialog id="oknoKsiazka">
+  <form class="okno" id="formKsiazka" novalidate autocomplete="off">
+    <h3 id="kNaglowek">Dodaj książkę</h3>
+    <p id="kOpis"></p>
+    <label class="l" for="kIsbn">ISBN <small id="kIsbnInfo"></small></label>
+    <div class="wiersz-pola">
+      <input type="text" id="kIsbn" inputmode="numeric" placeholder="978…">
+      <button type="button" class="maly jasny" id="kPobierz">Pobierz dane</button>
+    </div>
+    <label class="l" for="kTytul">Tytuł *</label>
+    <input type="text" id="kTytul">
+    <label class="l" for="kAutor">Autor</label>
+    <input type="text" id="kAutor">
+    <button type="button" class="maly jasny pelny" id="kSzukaj">Szukaj w katalogach po tytule i autorze</button>
+    <div class="wyniki" id="kWyniki" hidden></div>
+    <label class="l" for="kWyd">Wydawnictwo</label>
+    <input type="text" id="kWyd">
+    <div class="dwa">
+      <div><label class="l" for="kRok">Rok wydania</label><input type="number" id="kRok" inputmode="numeric" min="1400" max="2100"></div>
+      <div><label class="l" for="kStrony">Liczba stron</label><input type="number" id="kStrony" inputmode="numeric" min="1" max="20000"></div>
+    </div>
+    <label class="l" for="kGatunek">Gatunek</label>
+    <input type="text" id="kGatunek" placeholder="np. powieść, reportaż, poradnik">
+    <div class="dwa">
+      <div><label class="l" for="kSeria">Seria</label><input type="text" id="kSeria"></div>
+      <div><label class="l" for="kNr">Nr w serii</label><input type="text" id="kNr" inputmode="decimal"></div>
+    </div>
+    <label class="l" for="kOprawa">Oprawa</label>
+    <select id="kOprawa"><option value="">nie wiem</option><option value="miękka">miękka</option><option value="twarda">twarda</option><option value="kartonowa">kartonowa (sztywne kartki)</option></select>
+    <label class="l" for="kLok">Lokalizacja</label>
+    <input type="text" id="kLok" placeholder="np. Salon – regał 2">
+    <label class="l-check"><input type="checkbox" id="kRzadko"> Rzadko używana (na dolne półki)</label>
+    <div class="komunikat" id="kKomunikat" role="status" aria-live="polite"></div>
     <div class="stopka">
-      <button class="maly jasny" type="button" id="btnAnulujReczne">Anuluj</button>
-      <button class="maly" type="submit" value="zapisz">Zapisz w arkuszu</button>
+      <button type="button" class="maly usun" id="kUsun" hidden>Usuń</button>
+      <span class="odstep"></span>
+      <button type="button" class="maly jasny" id="kAnuluj">Anuluj</button>
+      <button type="submit" class="maly" id="kZapisz">Zapisz</button>
     </div>
   </form>
 </dialog>
@@ -238,7 +293,7 @@
 <script>
 'use strict';
 /* ==================== Stan i pamięć telefonu ==================== */
-const KLUCZE = { cfg: 'skaner.cfg', lista: 'skaner.lista', lok: 'skaner.lokalizacja', oprawa: 'skaner.oprawa' };
+const KLUCZE = { cfg: 'skaner.cfg', lista: 'skaner.lista', lok: 'skaner.lokalizacja', oprawa: 'skaner.oprawa', rzadko: 'skaner.rzadko' };
 const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.23.0/umd/index.min.js';
 const MAX_HISTORIA = 80;
 
@@ -263,9 +318,8 @@ const el = {
   kropka: $('#kropka'), statusTekst: $('#statusTekst'), btnArkusz: $('#btnArkusz'), btnUstawienia: $('#btnUstawienia'),
   oknoUstawienia: $('#oknoUstawienia'), ustUrl: $('#ustUrl'), ustKlucz: $('#ustKlucz'), ustDzwiek: $('#ustDzwiek'),
   ustWibracje: $('#ustWibracje'), btnTest: $('#btnTest'), wynikTestu: $('#wynikTestu'), formUstawienia: $('#formUstawienia'),
-  oknoReczne: $('#oknoReczne'), formReczne: $('#formReczne'), recIsbn: $('#recIsbn'), recTytul: $('#recTytul'),
-  recAutor: $('#recAutor'), recWyd: $('#recWyd'), recRok: $('#recRok'), recGatunek: $('#recGatunek'), recStrony: $('#recStrony'), recOprawa: $('#recOprawa'), oprawa: $('#oprawa'), oprawaInfo: $('#oprawaInfo'),
-  btnAnulujReczne: $('#btnAnulujReczne'), toast: $('#toast')
+  oprawa: $('#oprawa'), oprawaInfo: $('#oprawaInfo'), rzadko: $('#rzadko'), rzadkoWiersz: $('#rzadkoWiersz'), rzadkoInfo: $('#rzadkoInfo'),
+  btnBezIsbn: $('#btnBezIsbn'), toast: $('#toast')
 };
 
 /* ==================== ISBN ==================== */
@@ -362,12 +416,14 @@ function zapiszListe() {
   zapisz(KLUCZE.lista, lista);
 }
 
+function noweIdLokalne() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
 function dodajDoKolejki(isbn13, zrodlo) {
   if (lista.some(p => p.isbn === isbn13 && (p.status === 'czeka' || p.status === 'wysyla'))) {
     pokazToast('Ta książka już czeka w kolejce');
     return;
   }
-  lista.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), isbn: isbn13, lok: el.lokalizacja.value.trim(), oprawa: oprawaWybrana, status: 'czeka', czas: Date.now(), zrodlo: zrodlo });
+  lista.unshift({ id: noweIdLokalne(), isbn: isbn13, lok: el.lokalizacja.value.trim(), oprawa: oprawaWybrana, rzadko: rzadkoWybrane, status: 'czeka', czas: Date.now(), zrodlo: zrodlo });
   zapiszListe(); render(); przetwarzaj();
 }
 
@@ -382,8 +438,8 @@ async function przetwarzaj() {
       poz.status = 'wysyla'; poz.blad = ''; render();
       try {
         const odp = poz.reczna
-          ? await api({ action: 'save', ksiazka: poz.reczna, location: poz.lok, binding: poz.oprawa || '' })
-          : await api({ action: 'add', isbn: poz.isbn, location: poz.lok, force: !!poz.force, binding: poz.oprawa || '' });
+          ? await api({ action: 'save', ksiazka: poz.reczna, location: poz.lok, binding: poz.oprawa || '', rare: !!poz.rzadko })
+          : await api({ action: 'add', isbn: poz.isbn, location: poz.lok, force: !!poz.force, binding: poz.oprawa || '', rare: !!poz.rzadko });
         if (!odp.ok) {
           if (odp.kod === 'klucz' || odp.kod === 'konfiguracja') {
             poz.status = 'czeka'; blokadaKlucza = true;
@@ -433,7 +489,7 @@ window.addEventListener('online', () => przetwarzaj());
 /* ==================== Lista na ekranie ==================== */
 const ETYKIETY = {
   czeka: 'W kolejce', wysyla: 'Szukam danych…', dodano: 'Dodano', duplikat: 'Już jest w arkuszu',
-  brak: 'Nie znaleziono danych', blad: 'Błąd'
+  brak: 'Nie znaleziono danych', blad: 'Błąd', poprawiono: 'Poprawiono', usunieto: 'Usunięto (jest w „Koszu”)'
 };
 const IKONA_KSIAZKI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>';
 
@@ -448,27 +504,30 @@ function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ 
 
 function render() {
   el.pusto.hidden = lista.length > 0;
-  const dodane = lista.filter(p => p.status === 'dodano').length;
+  const dodane = lista.filter(p => p.status === 'dodano' || p.status === 'poprawiono').length;
   el.licznik.textContent = lista.length ? `dodane: ${dodane}` : '';
   el.lista.innerHTML = lista.map(p => {
     const k = p.ksiazka || {};
-    const tytul = k.tytul || (p.reczna && p.reczna.tytul) || 'ISBN ' + formatujIsbn(p.isbn);
+    const tytul = k.tytul || (p.reczna && p.reczna.tytul) || (p.isbn ? 'ISBN ' + p.isbn : 'Książka bez ISBN');
     const autor = [k.autor, k.rok].filter(Boolean).join(' · ');
     const okl = k.okladka && /^https:\/\//.test(k.okladka)
       ? `<img src="${esc(k.okladka)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createRange().createContextualFragment(IKONA_KSIAZKI))">`
       : IKONA_KSIAZKI;
     let etykieta = ETYKIETY[p.status] || p.status;
-    if (p.wiersz && (p.status === 'dodano' || p.status === 'duplikat')) etykieta += ' · wiersz ' + p.wiersz;
+    if (p.wiersz && (p.status === 'dodano' || p.status === 'duplikat' || p.status === 'poprawiono')) etykieta += ' · wiersz ' + p.wiersz;
+    const przycisk = (akcja, tekst) => `<button class="maly jasny" data-akcja="${akcja}" data-id="${p.id}">${tekst}</button>`;
     let akcje = '';
-    if (p.status === 'duplikat') akcje = `<button class="maly jasny" data-akcja="egzemplarz" data-id="${p.id}">Dodaj kolejny egzemplarz</button>`;
-    if (p.status === 'brak') akcje = `<button class="maly jasny" data-akcja="recznie" data-id="${p.id}">Wpisz dane ręcznie</button>`;
-    if (p.status === 'blad') akcje = `<button class="maly jasny" data-akcja="ponow" data-id="${p.id}">Spróbuj ponownie</button>`;
+    if (p.status === 'dodano' || p.status === 'poprawiono') akcje = przycisk('popraw', 'Popraw lub usuń');
+    if (p.status === 'duplikat') akcje = przycisk('egzemplarz', 'Dodaj kolejny egzemplarz') + przycisk('popraw', 'Popraw lub usuń');
+    if (p.status === 'brak') akcje = przycisk('recznie', 'Wyszukaj po tytule lub wpisz');
+    if (p.status === 'blad') akcje = przycisk('ponow', 'Spróbuj ponownie');
+    if (p.status === 'usunieto' && p.koszId) akcje = przycisk('cofnij', 'Cofnij usunięcie');
     return `<li class="poz s-${p.status}">
       <div class="okl">${okl}</div>
       <div class="tresc">
         <div class="tyt">${esc(tytul)}</div>
         ${autor ? `<div class="aut">${esc(autor)}</div>` : ''}
-        <div class="meta"><span class="chip">${esc(etykieta)}</span><span>${esc(formatujIsbn(p.isbn))}</span>${p.lok ? `<span>· ${esc(p.lok)}</span>` : ''}${opisGrzbietu(k, p)}</div>
+        <div class="meta"><span class="chip">${esc(etykieta)}</span><span>${p.isbn ? esc(p.isbn) : 'bez ISBN'}</span>${p.lok ? `<span>· ${esc(p.lok)}</span>` : ''}${opisGrzbietu(k, p)}${k.rzadko || p.rzadko ? '<span>· rzadko używana</span>' : ''}</div>
         ${p.blad ? `<div class="blad-tekst">${esc(p.blad)}</div>` : ''}
         ${akcje ? `<div class="akcje">${akcje}</div>` : ''}
       </div>
@@ -484,35 +543,267 @@ el.lista.addEventListener('click', e => {
   if (!p) return;
   if (b.dataset.akcja === 'egzemplarz') { p.force = true; p.status = 'czeka'; }
   if (b.dataset.akcja === 'ponow') { p.status = 'czeka'; p.blad = ''; }
-  if (b.dataset.akcja === 'recznie') { otworzReczne(p); return; }
+  if (b.dataset.akcja === 'recznie') { otworzFormularz('brak', p); return; }
+  if (b.dataset.akcja === 'popraw') { otworzFormularz('edycja', p); return; }
+  if (b.dataset.akcja === 'cofnij') { przywrocKsiazke(p, b); return; }
   zapiszListe(); render(); przetwarzaj();
 });
 
 el.btnWyslij.addEventListener('click', () => { blokadaKlucza = false; przetwarzaj(); });
 
-/* ==================== Ręczne uzupełnianie ==================== */
-let edytowana = null;
-function otworzReczne(p) {
-  edytowana = p;
-  const r = p.reczna || {};
-  el.recIsbn.value = formatujIsbn(p.isbn);
-  el.recTytul.value = r.tytul || ''; el.recAutor.value = r.autor || ''; el.recWyd.value = r.wydawnictwo || '';
-  el.recRok.value = r.rok || ''; el.recGatunek.value = r.gatunek || '';
-  el.recStrony.value = r.strony || ''; el.recOprawa.value = r.oprawa || p.oprawa || '';
-  el.oknoReczne.showModal();
-  setTimeout(() => el.recTytul.focus(), 50);
+/* ==================== Książka: dodawanie bez ISBN, uzupełnianie i poprawianie ==================== */
+const k$ = id => document.getElementById(id);
+const fk = {
+  okno: k$('oknoKsiazka'), form: k$('formKsiazka'), naglowek: k$('kNaglowek'), opis: k$('kOpis'),
+  isbn: k$('kIsbn'), isbnInfo: k$('kIsbnInfo'), pobierz: k$('kPobierz'), tytul: k$('kTytul'), autor: k$('kAutor'),
+  szukaj: k$('kSzukaj'), wyniki: k$('kWyniki'), wyd: k$('kWyd'), rok: k$('kRok'), strony: k$('kStrony'),
+  gatunek: k$('kGatunek'), seria: k$('kSeria'), nr: k$('kNr'), oprawa: k$('kOprawa'), lok: k$('kLok'),
+  rzadko: k$('kRzadko'), komunikat: k$('kKomunikat'), usun: k$('kUsun'), anuluj: k$('kAnuluj'), zapisz: k$('kZapisz')
+};
+const POLA_Z_KATALOGU = ['tlumaczenie', 'tematy', 'dziedzina', 'literatura', 'jezyk', 'opis', 'okladka', 'wysokosc', 'grzbietKatalog', 'zrodlo'];
+let formularz = null;   // { tryb: 'nowa' | 'brak' | 'edycja', poz, katalog, wyniki }
+let zegarUsun = null;
+
+function komunikat(tekst, rodzaj) {
+  fk.komunikat.textContent = tekst || '';
+  fk.komunikat.className = 'komunikat' + (rodzaj ? ' ' + rodzaj : '');
 }
-el.btnAnulujReczne.addEventListener('click', () => el.oknoReczne.close());
-el.formReczne.addEventListener('submit', e => {
-  if (!edytowana) return;
-  const tytul = el.recTytul.value.trim();
-  if (!tytul) { e.preventDefault(); el.recTytul.classList.add('trzes'); setTimeout(() => el.recTytul.classList.remove('trzes'), 400); return; }
-  edytowana.reczna = { isbn: edytowana.isbn, tytul, autor: el.recAutor.value.trim(), wydawnictwo: el.recWyd.value.trim(), rok: el.recRok.value.trim(), gatunek: el.recGatunek.value.trim(), strony: el.recStrony.value.trim(), oprawa: el.recOprawa.value };
-  edytowana.ksiazka = { tytul: edytowana.reczna.tytul, autor: edytowana.reczna.autor, rok: edytowana.reczna.rok };
-  edytowana.status = 'czeka';
-  edytowana = null;
-  zapiszListe(); render(); przetwarzaj();
+function trzes(pole) { pole.classList.add('trzes'); setTimeout(() => pole.classList.remove('trzes'), 400); pole.focus(); }
+function zajety(tak) { [fk.pobierz, fk.szukaj, fk.zapisz, fk.usun].forEach(b => { b.disabled = tak; }); }
+function bladPolaczenia(e, co) {
+  return e instanceof BladSieci ? 'Brak połączenia z arkuszem' + (co ? ' – ' + co : '') + '. Spróbuj, gdy wróci internet.' : e.message;
+}
+function resetUsun() { clearTimeout(zegarUsun); fk.usun.classList.remove('potwierdz'); fk.usun.textContent = 'Usuń'; }
+
+function ustawPola(k) {
+  k = k || {};
+  fk.tytul.value = k.tytul || '';
+  fk.autor.value = k.autor || '';
+  fk.wyd.value = k.wydawnictwo || '';
+  fk.rok.value = (String(k.rok || '').match(/\d{4}/) || [''])[0];
+  fk.strony.value = /^\d+$/.test(String(k.strony || '')) ? String(k.strony) : '';
+  fk.gatunek.value = k.gatunek || '';
+  fk.seria.value = k.seria || '';
+  fk.nr.value = k.nrSerii !== undefined && k.nrSerii !== null ? String(k.nrSerii) : '';
+}
+
+/** Wpisuje do formularza dane z katalogu i zapamiętuje pola, których nie widać (opis, okładka, tematy…). */
+function zastosujKatalog(k) {
+  ustawPola(k);
+  if (k.oprawa) fk.oprawa.value = k.oprawa;
+  formularz.katalog = {};
+  POLA_Z_KATALOGU.forEach(n => { if (k[n] !== undefined && k[n] !== null && k[n] !== '') formularz.katalog[n] = k[n]; });
+}
+
+function otworzFormularz(tryb, p) {
+  formularz = { tryb, poz: p || null, katalog: null, wyniki: [] };
+  fk.wyniki.hidden = true; fk.wyniki.innerHTML = '';
+  komunikat(''); resetUsun(); zajety(false);
+  fk.usun.hidden = tryb !== 'edycja';
+  fk.isbn.readOnly = tryb === 'brak';
+  fk.pobierz.hidden = tryb === 'brak';
+  if (tryb === 'nowa') {
+    fk.naglowek.textContent = 'Dodaj książkę bez kodu';
+    fk.opis.textContent = 'Wpisz tytuł (i autora) i stuknij „Szukaj w katalogach” – albo uzupełnij pola sam. Jeśli książka ma ISBN (zwykle na odwrocie strony tytułowej), wpisz go i stuknij „Pobierz dane”.';
+    fk.isbnInfo.textContent = '(jeśli jest)';
+    ustawPola({});
+    fk.isbn.value = ''; fk.oprawa.value = oprawaWybrana || ''; fk.lok.value = el.lokalizacja.value.trim(); fk.rzadko.checked = rzadkoWybrane;
+    fk.zapisz.textContent = 'Dodaj do arkusza';
+  } else if (tryb === 'brak') {
+    const r = p.reczna || {};
+    fk.naglowek.textContent = 'Uzupełnij dane książki';
+    fk.opis.textContent = 'Nie znalazłem tej książki po numerze ISBN. Wyszukaj ją po tytule i autorze albo wpisz dane sam – wystarczy tytuł.';
+    fk.isbnInfo.textContent = '';
+    ustawPola(r);
+    fk.isbn.value = p.isbn || '';
+    fk.oprawa.value = r.oprawa || p.oprawa || '';
+    fk.lok.value = r.lokalizacja !== undefined ? r.lokalizacja : (p.lok || '');
+    fk.rzadko.checked = !!(r.rzadko || p.rzadko);
+    fk.zapisz.textContent = 'Zapisz w arkuszu';
+  } else {
+    const k = p.ksiazka || {};
+    fk.naglowek.textContent = 'Popraw książkę';
+    fk.opis.textContent = 'Zmiany zapiszą się w arkuszu' + (p.wiersz ? ' (wiersz ' + p.wiersz + ')' : '') +
+      '. Jeśli skaner źle odczytał kod, wpisz właściwy ISBN i stuknij „Pobierz dane”.';
+    fk.isbnInfo.textContent = '';
+    ustawPola(k);
+    fk.isbn.value = k.isbn13 || p.isbn || '';
+    fk.oprawa.value = k.oprawa || '';
+    fk.lok.value = k.lokalizacja !== undefined ? k.lokalizacja : (p.lok || '');
+    fk.rzadko.checked = !!(k.rzadko || p.rzadko);
+    fk.zapisz.textContent = 'Zapisz zmiany';
+  }
+  fk.okno.showModal();
+  fk.okno.scrollTop = 0;
+}
+
+el.btnBezIsbn.addEventListener('click', () => otworzFormularz('nowa'));
+fk.anuluj.addEventListener('click', () => fk.okno.close());
+fk.okno.addEventListener('close', () => { resetUsun(); formularz = null; });
+
+// Pobierz dane po ISBN (np. gdy skaner źle odczytał kod)
+fk.pobierz.addEventListener('click', async () => {
+  const isbn = normalizujIsbn(fk.isbn.value);
+  if (!isbn) { trzes(fk.isbn); komunikat('To nie jest poprawny ISBN (10 lub 13 cyfr) – sprawdź cyfry.', 'blad'); return; }
+  const f = formularz;
+  zajety(true); komunikat('Szukam po ISBN…');
+  try {
+    const r = await api({ action: 'lookup', isbn });
+    if (f !== formularz) return;
+    if (!r.ok) { komunikat(r.blad, 'blad'); return; }
+    fk.isbn.value = r.isbn;
+    if (!r.ksiazka) { komunikat('Nie znalazłem książki o tym ISBN. Sprawdź cyfry albo uzupełnij pola sam.', 'uwaga'); return; }
+    zastosujKatalog(r.ksiazka);
+    const inne = (r.wiersze || []).filter(w => !(f.tryb === 'edycja' && w === f.poz.wiersz));
+    komunikat('Pobrano: „' + r.ksiazka.tytul + '”. Sprawdź i zapisz.' +
+      (inne.length ? ' Uwaga: ten ISBN jest już w arkuszu (wiersz ' + inne.join(', ') + ').' : ''), inne.length ? 'uwaga' : 'ok');
+  } catch (e) {
+    komunikat(bladPolaczenia(e), 'blad');
+  } finally {
+    zajety(false);
+  }
 });
+
+// Szukanie po tytule i autorze (książki bez ISBN)
+fk.szukaj.addEventListener('click', async () => {
+  const tytul = fk.tytul.value.trim();
+  const autor = fk.autor.value.trim();
+  if (tytul.length < 2) { trzes(fk.tytul); komunikat('Wpisz tytuł, żeby wyszukać.', 'blad'); return; }
+  const f = formularz;
+  zajety(true); komunikat('');
+  fk.wyniki.hidden = false;
+  fk.wyniki.innerHTML = '<div class="info">Szukam w Bibliotece Narodowej i Google Books…</div>';
+  try {
+    const r = await api({ action: 'search', tytul, autor });
+    if (f !== formularz) return;
+    if (!r.ok) { fk.wyniki.hidden = true; komunikat(r.blad, 'blad'); return; }
+    f.wyniki = r.wyniki || [];
+    if (!f.wyniki.length) {
+      fk.wyniki.innerHTML = '<div class="info">Nic nie znalazłem. Sprawdź pisownię, spróbuj samego tytułu albo uzupełnij pola sam.</div>';
+      return;
+    }
+    fk.wyniki.innerHTML = '<div class="info">Stuknij właściwe wydanie:</div>' + f.wyniki.map((w, i) =>
+      `<button type="button" class="wynik" data-i="${i}"><b>${esc(w.tytul)}</b>` +
+      `<span>${esc([w.autor, w.wydawnictwo, w.rok, w.strony ? w.strony + ' s.' : ''].filter(Boolean).join(' · '))}</span>` +
+      `<span>${esc((w.isbn13 ? 'ISBN ' + w.isbn13 : 'bez ISBN') + ' · ' + String(w.zrodlo || '').split(' – ')[0])}</span></button>`).join('');
+  } catch (e) {
+    fk.wyniki.hidden = true;
+    komunikat(bladPolaczenia(e, 'nie mogę szukać'), 'blad');
+  } finally {
+    zajety(false);
+  }
+});
+
+fk.wyniki.addEventListener('click', e => {
+  const b = e.target.closest('.wynik');
+  if (!b || !formularz) return;
+  const w = formularz.wyniki[Number(b.dataset.i)];
+  if (!w) return;
+  fk.wyniki.querySelectorAll('.wynik').forEach(x => x.classList.toggle('wybrany', x === b));
+  zastosujKatalog(w);
+  if (w.isbn13 && formularz.tryb !== 'brak' && !fk.isbn.value.trim()) fk.isbn.value = w.isbn13;
+  komunikat('Uzupełniono z katalogu (' + String(w.zrodlo || '').split(' – ')[0] + '). Sprawdź pola i zapisz.', 'ok');
+  fk.wyd.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
+
+// Zapis
+fk.form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!formularz) return;
+  const f = formularz;
+  const tytul = fk.tytul.value.trim();
+  if (!tytul) { trzes(fk.tytul); komunikat('Tytuł jest wymagany.', 'blad'); return; }
+  const isbnTekst = fk.isbn.value.trim();
+  const isbn = isbnTekst ? normalizujIsbn(isbnTekst) : '';
+  if (isbnTekst && !isbn) { trzes(fk.isbn); komunikat('Ten ISBN jest niepoprawny – popraw go albo wyczyść pole.', 'blad'); return; }
+  const dane = Object.assign({}, f.katalog || {}, {
+    isbn: isbn || '', tytul, autor: fk.autor.value.trim(), wydawnictwo: fk.wyd.value.trim(), rok: fk.rok.value.trim(),
+    strony: fk.strony.value.trim(), gatunek: fk.gatunek.value.trim(), seria: fk.seria.value.trim(), nrSerii: fk.nr.value.trim(),
+    oprawa: fk.oprawa.value, lokalizacja: fk.lok.value.trim(), rzadko: fk.rzadko.checked
+  });
+
+  if (f.tryb === 'nowa') {
+    lista.unshift({ id: noweIdLokalne(), isbn: isbn || '', lok: dane.lokalizacja, oprawa: dane.oprawa, rzadko: dane.rzadko, reczna: dane,
+      ksiazka: { tytul, autor: dane.autor, rok: dane.rok, okladka: dane.okladka || '' }, status: 'czeka', czas: Date.now(), zrodlo: 'recznie' });
+    fk.okno.close();
+    zapiszListe(); render(); przetwarzaj();
+    pokazToast('Dodano do kolejki: „' + tytul + '”');
+    return;
+  }
+  if (f.tryb === 'brak') {
+    const p = f.poz;
+    p.reczna = dane; p.lok = dane.lokalizacja; p.oprawa = dane.oprawa; p.rzadko = dane.rzadko;
+    p.ksiazka = { tytul, autor: dane.autor, rok: dane.rok, okladka: dane.okladka || '' };
+    p.status = 'czeka';
+    fk.okno.close();
+    zapiszListe(); render(); przetwarzaj();
+    return;
+  }
+
+  // Poprawianie – od razu w arkuszu
+  const p = f.poz, k = p.ksiazka || {};
+  zajety(true); komunikat('Zapisuję…');
+  try {
+    const r = await api({ action: 'update', id: k.id || '', wiersz: p.wiersz || '', staryIsbn: k.isbn13 || p.isbn || '', staryTytul: k.tytul || '', ksiazka: dane, nowyKatalog: !!f.katalog });
+    if (!r.ok) { komunikat(r.blad, 'blad'); return; }
+    p.ksiazka = r.ksiazka; p.wiersz = r.wiersz; p.isbn = r.ksiazka.isbn13 || '';
+    p.lok = r.ksiazka.lokalizacja; p.rzadko = r.ksiazka.rzadko; p.oprawa = r.ksiazka.oprawa;
+    p.status = 'poprawiono'; p.blad = '';
+    zapiszListe(); render();
+    fk.okno.close();
+    pokazToast(r.inneWiersze && r.inneWiersze.length
+      ? 'Zapisano. Uwaga: ten ISBN jest też w wierszu ' + r.inneWiersze.join(', ')
+      : 'Zapisano zmiany w arkuszu');
+  } catch (e) {
+    komunikat(bladPolaczenia(e, 'zmiany nie zostały zapisane'), 'blad');
+  } finally {
+    zajety(false);
+  }
+});
+
+// Usuwanie (do arkusza „Kosz”) – dwa stuknięcia
+fk.usun.addEventListener('click', async () => {
+  if (!formularz || formularz.tryb !== 'edycja') return;
+  if (!fk.usun.classList.contains('potwierdz')) {
+    fk.usun.classList.add('potwierdz');
+    fk.usun.textContent = 'Na pewno usunąć?';
+    zegarUsun = setTimeout(resetUsun, 4000);
+    return;
+  }
+  resetUsun();
+  const p = formularz.poz, k = p.ksiazka || {};
+  zajety(true); komunikat('Usuwam…');
+  try {
+    const r = await api({ action: 'delete', id: k.id || '', wiersz: p.wiersz || '', staryIsbn: k.isbn13 || p.isbn || '', staryTytul: k.tytul || '' });
+    if (!r.ok) { komunikat(r.blad, 'blad'); return; }
+    lista.forEach(x => {
+      if (x !== p && x.wiersz > r.wiersz && ['dodano', 'duplikat', 'poprawiono'].includes(x.status)) x.wiersz--;
+    });
+    p.status = 'usunieto'; p.koszId = r.id; p.wiersz = null;
+    zapiszListe(); render();
+    fk.okno.close();
+    pokazToast('Przeniesiono do arkusza „Kosz” – możesz to cofnąć');
+  } catch (e) {
+    komunikat(bladPolaczenia(e, 'nic nie usunięto'), 'blad');
+  } finally {
+    zajety(false);
+  }
+});
+
+async function przywrocKsiazke(p, przycisk) {
+  if (przycisk) przycisk.disabled = true;
+  try {
+    const r = await api({ action: 'restore', id: p.koszId });
+    if (!r.ok) { pokazToast(r.blad); return; }
+    p.status = 'dodano'; p.ksiazka = r.ksiazka; p.wiersz = r.wiersz; p.koszId = null;
+    zapiszListe(); render();
+    pokazToast('Przywrócono – wiersz ' + r.wiersz);
+  } catch (e) {
+    pokazToast(bladPolaczenia(e));
+  } finally {
+    if (przycisk) przycisk.disabled = false;
+  }
+}
 
 /* ==================== Ręczne wpisanie ISBN ==================== */
 el.formReczny.addEventListener('submit', e => {
@@ -547,6 +838,20 @@ el.oprawa.addEventListener('click', e => {
   pokazOprawe();
 });
 pokazOprawe();
+
+/* ==================== Rzadko używane (na dolne półki) ==================== */
+let rzadkoWybrane = wczytaj(KLUCZE.rzadko, false) === true;
+function pokazRzadko() {
+  el.rzadko.checked = rzadkoWybrane;
+  el.rzadkoWiersz.classList.toggle('wl', rzadkoWybrane);
+  el.rzadkoInfo.textContent = rzadkoWybrane ? 'włączone – każda kolejna książka trafi na dolne półki' : 'na dolne półki – włącz dla kolejnych książek';
+}
+el.rzadko.addEventListener('change', () => {
+  rzadkoWybrane = el.rzadko.checked;
+  zapisz(KLUCZE.rzadko, rzadkoWybrane);
+  pokazRzadko();
+});
+pokazRzadko();
 
 /* ==================== Skaner ==================== */
 const skaner = { strumien: null, detektor: null, zx: null, aktywny: false, zegar: null, ostatni: { kod: '', czas: 0 }, ostrzezenie: 0, latarka: false, wakeLock: null, wznowic: false };
