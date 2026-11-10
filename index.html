@@ -40,7 +40,7 @@
   .ramka::before, .ramka::after { content: ""; position: absolute; inset: 0; border-radius: 12px; border: 2px solid rgba(246,241,231,.9); clip-path: polygon(0 0, 22% 0, 22% 100%, 0 100%, 0 0, 100% 0, 100% 100%, 78% 100%, 78% 0); }
   .ramka::after { border: 0; clip-path: none; left: 6%; right: 6%; top: 50%; bottom: auto; height: 2px; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); animation: laser 1.8s ease-in-out infinite; }
   @keyframes laser { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
-  .wskazowka { position: absolute; left: 0; right: 0; top: 12%; text-align: center; color: #f6f1e7; font-size: 14px; text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
+  .wskazowka { position: absolute; left: 0; right: 0; top: 58px; padding: 0 16px; text-align: center; color: #f6f1e7; font-size: 14px; text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
   .blysk { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%) translateY(8px); padding: 9px 14px; border-radius: 999px; background: var(--ok); color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; }
   .blysk.widoczny { opacity: 1; transform: translateX(-50%); }
   .blysk.ostrz { background: var(--warn); white-space: normal; text-align: center; border-radius: 14px; }
@@ -51,6 +51,12 @@
   .przycisk.drugi { background: rgba(246,241,231,.14); color: #f6f1e7; box-shadow: none; backdrop-filter: blur(6px); }
   .przycisk svg { width: 20px; height: 20px; }
   .okragly { width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .zoom { position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(5,10,14,.55); backdrop-filter: blur(6px); }
+  .zoom[hidden] { display: none; }
+  .zoom button { border: 0; background: none; color: #f6f1e7; font: 600 13px system-ui, sans-serif; min-width: 40px; height: 32px; border-radius: 999px; padding: 0 8px; }
+  .zoom button.wl { background: #f6f1e7; color: var(--ink); }
+  .fokus { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border: 2px solid #fde68a; border-radius: 50%; pointer-events: none; opacity: 0; transform: scale(1.3); transition: opacity .25s, transform .25s; }
+  .fokus.widoczny { opacity: 1; transform: scale(1); }
   .okragly.wl { background: #f6f1e7; color: var(--ink); }
 
   /* Treść */
@@ -61,6 +67,13 @@
   .pole label { font-size: 13px; color: var(--muted); min-width: 82px; }
   .pole input { flex: 1; min-width: 0; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 16px; }
   .pole input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .pole input.aktywna { border-color: var(--accent); background: #fff7f2; }
+  .podpowiedzi { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 136px; overflow-y: auto; padding: 1px; }
+  .podpowiedzi[hidden] { display: none; }
+  .podpowiedzi button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 11px; font-size: 14px; color: var(--text); cursor: pointer; }
+  .podpowiedzi button.wybrana { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .podpowiedzi button.wyczysc { color: var(--muted); }
+  .podpowiedzi .info { width: 100%; font-size: 12.5px; color: var(--muted); padding: 2px; }
   .oprawa { margin: 12px 0; }
   .rzadko { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; padding: 9px 12px; border-radius: 11px; background: #efe8da; cursor: pointer; transition: background .2s; }
   .rzadko .tekst { display: flex; flex-direction: column; font-size: 14.5px; }
@@ -169,6 +182,8 @@
 <section class="kamera" id="kamera">
   <video id="wideo" playsinline muted autoplay></video>
   <div class="ramka" id="ramka" hidden></div>
+  <div class="fokus" id="fokus"></div>
+  <div class="zoom" id="zoom" role="radiogroup" aria-label="Przybliżenie" hidden></div>
   <div class="wskazowka" id="wskazowka" hidden>Ustaw kod kreskowy z tyłu książki w ramce</div>
   <div class="zaslona" id="zaslona">
     <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#e2632a" stroke-width="1.6"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M12.5 8v8M15 8v8M17 8v8"/></svg>
@@ -179,6 +194,9 @@
     <button class="przycisk" id="btnStart">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       <span>Włącz aparat</span>
+    </button>
+    <button class="przycisk drugi okragly" id="btnObiektyw" hidden aria-label="Zmień obiektyw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M9 13a3 3 0 0 1 5-2.2M15 13a3 3 0 0 1-5 2.2"/><path d="M14 9.5v1.6h-1.6M10 16.5v-1.6h1.6"/></svg>
     </button>
     <button class="przycisk drugi okragly" id="btnLatarka" hidden aria-label="Latarka">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6l-1 7h3l-6 13 1-9H8z"/></svg>
@@ -192,6 +210,11 @@
       <label for="lokalizacja">Lokalizacja</label>
       <input id="lokalizacja" type="text" placeholder="np. Salon – regał 2" autocomplete="off">
     </div>
+    <div class="pole">
+      <label for="kategoria">Kategoria</label>
+      <input id="kategoria" type="text" placeholder="wybierz lub wpisz nową" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="podpowiedzi" id="kategoriaPodp" hidden></div>
     <div class="oprawa">
       <div class="naglowek"><span>Oprawa</span><b id="oprawaInfo"></b></div>
       <div class="segment" id="oprawa" role="radiogroup" aria-label="Oprawa">
@@ -275,6 +298,9 @@
     </div>
     <label class="l" for="kOprawa">Oprawa</label>
     <select id="kOprawa"><option value="">nie wiem</option><option value="miękka">miękka</option><option value="twarda">twarda</option><option value="kartonowa">kartonowa (sztywne kartki)</option></select>
+    <label class="l" for="kKat">Kategoria Karola</label>
+    <input type="text" id="kKat" placeholder="wybierz z listy albo wpisz nową">
+    <div class="podpowiedzi" id="kKatPodp" hidden></div>
     <label class="l" for="kLok">Lokalizacja</label>
     <input type="text" id="kLok" placeholder="np. Salon – regał 2">
     <label class="l-check"><input type="checkbox" id="kRzadko"> Rzadko używana (na dolne półki)</label>
@@ -293,7 +319,8 @@
 <script>
 'use strict';
 /* ==================== Stan i pamięć telefonu ==================== */
-const KLUCZE = { cfg: 'skaner.cfg', lista: 'skaner.lista', lok: 'skaner.lokalizacja', oprawa: 'skaner.oprawa', rzadko: 'skaner.rzadko' };
+const KLUCZE = { cfg: 'skaner.cfg', lista: 'skaner.lista', lok: 'skaner.lokalizacja', oprawa: 'skaner.oprawa', rzadko: 'skaner.rzadko',
+  kat: 'skaner.kategoria', kategorie: 'skaner.kategorie', zoom: 'skaner.zoom', obiektyw: 'skaner.obiektyw' };
 const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.23.0/umd/index.min.js';
 const MAX_HISTORIA = 80;
 
@@ -312,7 +339,8 @@ const $ = s => document.querySelector(s);
 const el = {
   wideo: $('#wideo'), kamera: $('#kamera'), ramka: $('#ramka'), wskazowka: $('#wskazowka'), zaslona: $('#zaslona'),
   zaslonaTekst: $('#zaslonaTekst'), blysk: $('#blysk'), btnStart: $('#btnStart'), btnLatarka: $('#btnLatarka'),
-  lokalizacja: $('#lokalizacja'), formReczny: $('#formReczny'), isbnReczny: $('#isbnReczny'),
+  zoom: $('#zoom'), fokus: $('#fokus'), btnObiektyw: $('#btnObiektyw'),
+  lokalizacja: $('#lokalizacja'), kategoria: $('#kategoria'), kategoriaPodp: $('#kategoriaPodp'), formReczny: $('#formReczny'), isbnReczny: $('#isbnReczny'),
   lista: $('#lista'), pusto: $('#pusto'), licznik: $('#licznik'),
   banerPolacz: $('#banerPolacz'), banerKolejka: $('#banerKolejka'), banerKolejkaTekst: $('#banerKolejkaTekst'), btnWyslij: $('#btnWyslij'),
   kropka: $('#kropka'), statusTekst: $('#statusTekst'), btnArkusz: $('#btnArkusz'), btnUstawienia: $('#btnUstawienia'),
@@ -383,6 +411,7 @@ async function sprawdzPolaczenie(cicho) {
     if (!r.ok) { ustawStatus('blad', 'Błąd połączenia'); if (!cicho) pokazToast(r.blad); return r; }
     cfg.arkuszUrl = r.url || ''; cfg.arkuszNazwa = r.arkusz || '';
     zapisz(KLUCZE.cfg, cfg);
+    if (Array.isArray(r.kategorie)) kategorieZArkusza(r.kategorie);
     ustawStatus('ok', '„' + (r.arkusz || 'Arkusz') + '” · książek: ' + r.liczba);
     pokazArkuszLink();
     przetwarzaj();
@@ -423,7 +452,7 @@ function dodajDoKolejki(isbn13, zrodlo) {
     pokazToast('Ta książka już czeka w kolejce');
     return;
   }
-  lista.unshift({ id: noweIdLokalne(), isbn: isbn13, lok: el.lokalizacja.value.trim(), oprawa: oprawaWybrana, rzadko: rzadkoWybrane, status: 'czeka', czas: Date.now(), zrodlo: zrodlo });
+  lista.unshift({ id: noweIdLokalne(), isbn: isbn13, lok: el.lokalizacja.value.trim(), kat: kanonKat(el.kategoria.value), oprawa: oprawaWybrana, rzadko: rzadkoWybrane, status: 'czeka', czas: Date.now(), zrodlo: zrodlo });
   zapiszListe(); render(); przetwarzaj();
 }
 
@@ -438,8 +467,8 @@ async function przetwarzaj() {
       poz.status = 'wysyla'; poz.blad = ''; render();
       try {
         const odp = poz.reczna
-          ? await api({ action: 'save', ksiazka: poz.reczna, location: poz.lok, binding: poz.oprawa || '', rare: !!poz.rzadko })
-          : await api({ action: 'add', isbn: poz.isbn, location: poz.lok, force: !!poz.force, binding: poz.oprawa || '', rare: !!poz.rzadko });
+          ? await api({ action: 'save', ksiazka: poz.reczna, location: poz.lok, binding: poz.oprawa || '', rare: !!poz.rzadko, category: poz.kat || '' })
+          : await api({ action: 'add', isbn: poz.isbn, location: poz.lok, force: !!poz.force, binding: poz.oprawa || '', rare: !!poz.rzadko, category: poz.kat || '' });
         if (!odp.ok) {
           if (odp.kod === 'klucz' || odp.kod === 'konfiguracja') {
             poz.status = 'czeka'; blokadaKlucza = true;
@@ -450,6 +479,7 @@ async function przetwarzaj() {
           poz.status = 'blad'; poz.blad = odp.blad || 'Nieznany błąd.';
         } else {
           poz.status = odp.status; poz.ksiazka = odp.ksiazka || null; poz.wiersz = odp.wiersz || null;
+          if (poz.ksiazka && poz.ksiazka.kategoria) dopiszKategorie(poz.ksiazka.kategoria);
           if (odp.status === 'dodano') { poz.reczna = null; poz.force = false; }
           if (cfg.url) ustawStatus('ok', '„' + (cfg.arkuszNazwa || 'Arkusz') + '” · połączono');
         }
@@ -527,7 +557,7 @@ function render() {
       <div class="tresc">
         <div class="tyt">${esc(tytul)}</div>
         ${autor ? `<div class="aut">${esc(autor)}</div>` : ''}
-        <div class="meta"><span class="chip">${esc(etykieta)}</span><span>${p.isbn ? esc(p.isbn) : 'bez ISBN'}</span>${p.lok ? `<span>· ${esc(p.lok)}</span>` : ''}${opisGrzbietu(k, p)}${k.rzadko || p.rzadko ? '<span>· rzadko używana</span>' : ''}</div>
+        <div class="meta"><span class="chip">${esc(etykieta)}</span><span>${p.isbn ? esc(p.isbn) : 'bez ISBN'}</span>${(k.kategoria !== undefined ? k.kategoria : p.kat) ? `<span>· ${esc(k.kategoria !== undefined ? k.kategoria : p.kat)}</span>` : ''}${p.lok ? `<span>· ${esc(p.lok)}</span>` : ''}${opisGrzbietu(k, p)}${k.rzadko || p.rzadko ? '<span>· rzadko używana</span>' : ''}</div>
         ${p.blad ? `<div class="blad-tekst">${esc(p.blad)}</div>` : ''}
         ${akcje ? `<div class="akcje">${akcje}</div>` : ''}
       </div>
@@ -557,11 +587,11 @@ const fk = {
   okno: k$('oknoKsiazka'), form: k$('formKsiazka'), naglowek: k$('kNaglowek'), opis: k$('kOpis'),
   isbn: k$('kIsbn'), isbnInfo: k$('kIsbnInfo'), pobierz: k$('kPobierz'), tytul: k$('kTytul'), autor: k$('kAutor'),
   szukaj: k$('kSzukaj'), wyniki: k$('kWyniki'), wyd: k$('kWyd'), rok: k$('kRok'), strony: k$('kStrony'),
-  gatunek: k$('kGatunek'), seria: k$('kSeria'), nr: k$('kNr'), oprawa: k$('kOprawa'), lok: k$('kLok'),
+  gatunek: k$('kGatunek'), seria: k$('kSeria'), nr: k$('kNr'), oprawa: k$('kOprawa'), lok: k$('kLok'), kat: k$('kKat'), katPodp: k$('kKatPodp'),
   rzadko: k$('kRzadko'), komunikat: k$('kKomunikat'), usun: k$('kUsun'), anuluj: k$('kAnuluj'), zapisz: k$('kZapisz')
 };
 const POLA_Z_KATALOGU = ['tlumaczenie', 'tematy', 'dziedzina', 'literatura', 'jezyk', 'opis', 'okladka', 'wysokosc', 'grzbietKatalog', 'zrodlo'];
-let formularz = null;   // { tryb: 'nowa' | 'brak' | 'edycja', poz, katalog, wyniki }
+let formularz = null;   // { tryb: 'nowa' | 'brak' | 'edycja', poz, katalog, wyniki, katStart, zmieniony }
 let zegarUsun = null;
 
 function komunikat(tekst, rodzaj) {
@@ -596,7 +626,8 @@ function zastosujKatalog(k) {
 }
 
 function otworzFormularz(tryb, p) {
-  formularz = { tryb, poz: p || null, katalog: null, wyniki: [] };
+  formularz = { tryb, poz: p || null, katalog: null, wyniki: [], katStart: '', zmieniony: false };
+  fk.katPodp.hidden = true;
   fk.wyniki.hidden = true; fk.wyniki.innerHTML = '';
   komunikat(''); resetUsun(); zajety(false);
   fk.usun.hidden = tryb !== 'edycja';
@@ -608,6 +639,7 @@ function otworzFormularz(tryb, p) {
     fk.isbnInfo.textContent = '(jeśli jest)';
     ustawPola({});
     fk.isbn.value = ''; fk.oprawa.value = oprawaWybrana || ''; fk.lok.value = el.lokalizacja.value.trim(); fk.rzadko.checked = rzadkoWybrane;
+    fk.kat.value = kanonKat(el.kategoria.value);
     fk.zapisz.textContent = 'Dodaj do arkusza';
   } else if (tryb === 'brak') {
     const r = p.reczna || {};
@@ -619,26 +651,50 @@ function otworzFormularz(tryb, p) {
     fk.oprawa.value = r.oprawa || p.oprawa || '';
     fk.lok.value = r.lokalizacja !== undefined ? r.lokalizacja : (p.lok || '');
     fk.rzadko.checked = !!(r.rzadko || p.rzadko);
+    fk.kat.value = r.kategoria !== undefined ? r.kategoria : (p.kat || '');
     fk.zapisz.textContent = 'Zapisz w arkuszu';
   } else {
-    const k = p.ksiazka || {};
     fk.naglowek.textContent = 'Popraw książkę';
-    fk.opis.textContent = 'Zmiany zapiszą się w arkuszu' + (p.wiersz ? ' (wiersz ' + p.wiersz + ')' : '') +
-      '. Jeśli skaner źle odczytał kod, wpisz właściwy ISBN i stuknij „Pobierz dane”.';
     fk.isbnInfo.textContent = '';
-    ustawPola(k);
-    fk.isbn.value = k.isbn13 || p.isbn || '';
-    fk.oprawa.value = k.oprawa || '';
-    fk.lok.value = k.lokalizacja !== undefined ? k.lokalizacja : (p.lok || '');
-    fk.rzadko.checked = !!(k.rzadko || p.rzadko);
+    wypelnijEdycje(p);
     fk.zapisz.textContent = 'Zapisz zmiany';
   }
+  formularz.katStart = fk.kat.value;
   fk.okno.showModal();
   fk.okno.scrollTop = 0;
+  if (tryb === 'edycja') odswiezZArkusza(formularz);
+}
+
+function wypelnijEdycje(p) {
+  const k = p.ksiazka || {};
+  fk.opis.textContent = 'Zmiany zapiszą się w arkuszu' + (p.wiersz ? ' (wiersz ' + p.wiersz + ')' : '') +
+    '. Jeśli skaner źle odczytał kod, wpisz właściwy ISBN i stuknij „Pobierz dane”.';
+  ustawPola(k);
+  fk.isbn.value = k.isbn13 || p.isbn || '';
+  fk.oprawa.value = k.oprawa || '';
+  fk.lok.value = k.lokalizacja !== undefined ? k.lokalizacja : (p.lok || '');
+  fk.rzadko.checked = !!(k.rzadko || p.rzadko);
+  fk.kat.value = k.kategoria !== undefined ? k.kategoria : (p.kat || '');
+}
+
+/** Przy poprawianiu pokazuje aktualne dane z arkusza (np. kategorię przypisaną w arkuszu), dopóki nic nie zmieniono. */
+async function odswiezZArkusza(f) {
+  const p = f.poz, k = p.ksiazka || {};
+  try {
+    const r = await api({ action: 'get', id: k.id || '', wiersz: p.wiersz || '', staryIsbn: k.isbn13 || p.isbn || '', staryTytul: k.tytul || '' });
+    if (f !== formularz || f.zmieniony || f.katalog || !r.ok || !r.ksiazka) return;
+    p.ksiazka = Object.assign({}, k, r.ksiazka);
+    p.wiersz = r.wiersz || p.wiersz;
+    p.lok = r.ksiazka.lokalizacja; p.rzadko = r.ksiazka.rzadko; p.kat = r.ksiazka.kategoria || '';
+    wypelnijEdycje(p);
+    f.katStart = fk.kat.value;
+    zapiszListe(); render();
+  } catch (e) { /* bez internetu – zostają dane zapamiętane w telefonie */ }
 }
 
 el.btnBezIsbn.addEventListener('click', () => otworzFormularz('nowa'));
 fk.anuluj.addEventListener('click', () => fk.okno.close());
+fk.form.addEventListener('input', () => { if (formularz) formularz.zmieniony = true; });
 fk.okno.addEventListener('close', () => { resetUsun(); formularz = null; });
 
 // Pobierz dane po ISBN (np. gdy skaner źle odczytał kod)
@@ -719,11 +775,12 @@ fk.form.addEventListener('submit', async e => {
   const dane = Object.assign({}, f.katalog || {}, {
     isbn: isbn || '', tytul, autor: fk.autor.value.trim(), wydawnictwo: fk.wyd.value.trim(), rok: fk.rok.value.trim(),
     strony: fk.strony.value.trim(), gatunek: fk.gatunek.value.trim(), seria: fk.seria.value.trim(), nrSerii: fk.nr.value.trim(),
-    oprawa: fk.oprawa.value, lokalizacja: fk.lok.value.trim(), rzadko: fk.rzadko.checked
+    oprawa: fk.oprawa.value, lokalizacja: fk.lok.value.trim(), rzadko: fk.rzadko.checked, kategoria: kanonKat(fk.kat.value)
   });
+  if (dane.kategoria) dopiszKategorie(dane.kategoria);
 
   if (f.tryb === 'nowa') {
-    lista.unshift({ id: noweIdLokalne(), isbn: isbn || '', lok: dane.lokalizacja, oprawa: dane.oprawa, rzadko: dane.rzadko, reczna: dane,
+    lista.unshift({ id: noweIdLokalne(), isbn: isbn || '', lok: dane.lokalizacja, kat: dane.kategoria, oprawa: dane.oprawa, rzadko: dane.rzadko, reczna: dane,
       ksiazka: { tytul, autor: dane.autor, rok: dane.rok, okladka: dane.okladka || '' }, status: 'czeka', czas: Date.now(), zrodlo: 'recznie' });
     fk.okno.close();
     zapiszListe(); render(); przetwarzaj();
@@ -732,7 +789,7 @@ fk.form.addEventListener('submit', async e => {
   }
   if (f.tryb === 'brak') {
     const p = f.poz;
-    p.reczna = dane; p.lok = dane.lokalizacja; p.oprawa = dane.oprawa; p.rzadko = dane.rzadko;
+    p.reczna = dane; p.lok = dane.lokalizacja; p.oprawa = dane.oprawa; p.rzadko = dane.rzadko; p.kat = dane.kategoria;
     p.ksiazka = { tytul, autor: dane.autor, rok: dane.rok, okladka: dane.okladka || '' };
     p.status = 'czeka';
     fk.okno.close();
@@ -742,12 +799,14 @@ fk.form.addEventListener('submit', async e => {
 
   // Poprawianie – od razu w arkuszu
   const p = f.poz, k = p.ksiazka || {};
+  // Kategorii nie ruszamy, jeśli jej nie zmieniono (w arkuszu mogła zostać przypisana w międzyczasie).
+  if (normKat(dane.kategoria) === normKat(f.katStart)) delete dane.kategoria;
   zajety(true); komunikat('Zapisuję…');
   try {
     const r = await api({ action: 'update', id: k.id || '', wiersz: p.wiersz || '', staryIsbn: k.isbn13 || p.isbn || '', staryTytul: k.tytul || '', ksiazka: dane, nowyKatalog: !!f.katalog });
     if (!r.ok) { komunikat(r.blad, 'blad'); return; }
     p.ksiazka = r.ksiazka; p.wiersz = r.wiersz; p.isbn = r.ksiazka.isbn13 || '';
-    p.lok = r.ksiazka.lokalizacja; p.rzadko = r.ksiazka.rzadko; p.oprawa = r.ksiazka.oprawa;
+    p.lok = r.ksiazka.lokalizacja; p.rzadko = r.ksiazka.rzadko; p.oprawa = r.ksiazka.oprawa; p.kat = r.ksiazka.kategoria || '';
     p.status = 'poprawiono'; p.blad = '';
     zapiszListe(); render();
     fk.okno.close();
@@ -823,6 +882,82 @@ el.formReczny.addEventListener('submit', e => {
 el.lokalizacja.value = wczytaj(KLUCZE.lok, '');
 el.lokalizacja.addEventListener('change', () => zapisz(KLUCZE.lok, el.lokalizacja.value.trim()));
 
+/* ==================== Kategoria Karola ==================== */
+let kategorie = wczytaj(KLUCZE.kategorie, []);
+if (!Array.isArray(kategorie)) kategorie = [];
+const normKat = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/\s+/g, ' ').trim();
+const czystaKat = s => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 100);
+/** Ta sama kategoria inaczej zapisana (wielkość liter, polskie znaki) → pisownia z listy. */
+function kanonKat(s) {
+  const t = czystaKat(s);
+  return t ? (kategorie.find(k => normKat(k) === normKat(t)) || t) : '';
+}
+function dopiszKategorie(nazwa) {
+  const t = czystaKat(nazwa);
+  if (!t || kategorie.some(k => normKat(k) === normKat(t))) return;
+  kategorie.push(t);
+  zapisz(KLUCZE.kategorie, kategorie);
+}
+/** Lista z arkusza (w jego kolejności) + kategorie książek, które jeszcze czekają w kolejce. */
+function kategorieZArkusza(zArkusza) {
+  const wynik = [];
+  const dodaj = n => { const t = czystaKat(n); if (t && !wynik.some(k => normKat(k) === normKat(t))) wynik.push(t); };
+  zArkusza.forEach(dodaj);
+  lista.filter(p => p.status === 'czeka' || p.status === 'wysyla').forEach(p => dodaj(p.kat));
+  kategorie = wynik;
+  zapisz(KLUCZE.kategorie, kategorie);
+}
+function podepnijKategorie(pole, box, poZmianie) {
+  const pokaz = () => {
+    const q = normKat(pole.value);
+    const dokladna = kategorie.some(k => normKat(k) === q);
+    const pasujace = q && !dokladna ? kategorie.filter(k => normKat(k).includes(q)) : kategorie;
+    box.innerHTML = '';
+    if (q) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'wyczysc'; b.dataset.wartosc = ''; b.textContent = '✕ bez kategorii';
+      box.appendChild(b);
+    }
+    pasujace.forEach(k => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.wartosc = k; b.textContent = k;
+      if (normKat(k) === q) b.className = 'wybrana';
+      box.appendChild(b);
+    });
+    const info = document.createElement('div');
+    info.className = 'info';
+    if (q && !dokladna) info.textContent = 'Nowa kategoria „' + czystaKat(pole.value) + '” – dopisze się do listy w arkuszu.';
+    else if (!kategorie.length) info.textContent = 'Nie masz jeszcze kategorii – wpisz pierwszą.';
+    if (info.textContent) box.appendChild(info);
+    box.hidden = false;
+    if (pole.closest('dialog')) requestAnimationFrame(() => box.scrollIntoView({ block: 'nearest' }));
+  };
+  pole.addEventListener('focus', pokaz);
+  pole.addEventListener('input', pokaz);
+  pole.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== pole) box.hidden = true; }, 150));
+  box.addEventListener('pointerdown', e => e.preventDefault());   // stuknięcie w podpowiedź nie zamyka klawiatury przed wyborem
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    pole.value = b.dataset.wartosc;
+    box.hidden = true;
+    pole.blur();
+    pole.dispatchEvent(new Event('change'));
+    pole.dispatchEvent(new Event('input', { bubbles: true }));
+    box.hidden = true;
+  });
+  pole.addEventListener('change', () => {
+    const k = kanonKat(pole.value);
+    if (k !== pole.value) pole.value = k;
+    if (poZmianie) poZmianie();
+  });
+}
+function pokazKategorieGlowna() { el.kategoria.classList.toggle('aktywna', !!el.kategoria.value.trim()); }
+el.kategoria.value = wczytaj(KLUCZE.kat, '');
+pokazKategorieGlowna();
+podepnijKategorie(el.kategoria, el.kategoriaPodp, () => { zapisz(KLUCZE.kat, el.kategoria.value.trim()); pokazKategorieGlowna(); });
+podepnijKategorie(fk.kat, fk.katPodp);
+
 /* ==================== Oprawa kolejnych książek ==================== */
 let oprawaWybrana = wczytaj(KLUCZE.oprawa, '');
 function pokazOprawe() {
@@ -854,7 +989,11 @@ el.rzadko.addEventListener('change', () => {
 pokazRzadko();
 
 /* ==================== Skaner ==================== */
-const skaner = { strumien: null, detektor: null, zx: null, aktywny: false, zegar: null, ostatni: { kod: '', czas: 0 }, ostrzezenie: 0, latarka: false, wakeLock: null, wznowic: false };
+const skaner = { strumien: null, detektor: null, zx: null, aktywny: false, zegar: null, ostatni: { kod: '', czas: 0 }, kandydat: { kod: '', czas: 0 },
+  ostrzezenie: 0, latarka: false, wakeLock: null, wznowic: false, mozliwosci: {}, obiektywy: [] };
+const POZIOMY_ZOOMU = [1, 1.5, 2, 3];
+const WSKAZOWKA = 'Ustaw kod kreskowy w ramce · stuknij obraz, żeby wyostrzyć';
+const WSKAZOWKA_ZOOM = 'Trzymaj telefon ok. 15–20 cm od książki i przybliżaj przyciskiem, nie ręką';
 const plotno = document.createElement('canvas');
 let audio = null;
 
@@ -865,7 +1004,7 @@ async function startAparatu() {
   }
   el.btnStart.disabled = true;
   try {
-    skaner.strumien = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+    skaner.strumien = await otworzStrumien();
   } catch (e) {
     el.btnStart.disabled = false;
     el.zaslonaTekst.textContent = e && e.name === 'NotAllowedError'
@@ -876,10 +1015,7 @@ async function startAparatu() {
   el.wideo.srcObject = skaner.strumien;
   try { await el.wideo.play(); } catch (e) { /* autoplay */ }
   const sciezka = skaner.strumien.getVideoTracks()[0];
-  try { await sciezka.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) { /* nie każdy telefon */ }
-  let mozliwosci = {};
-  try { mozliwosci = sciezka.getCapabilities ? sciezka.getCapabilities() : {}; } catch (e) { mozliwosci = {}; }
-  el.btnLatarka.hidden = !mozliwosci.torch;
+  await ustawSterowanie(sciezka);
   skaner.latarka = false; el.btnLatarka.classList.remove('wl');
 
   try { await przygotujDetektor(); }
@@ -904,11 +1040,118 @@ function zatrzymajAparat() {
   skaner.strumien = null;
   el.wideo.srcObject = null;
   el.zaslona.hidden = false; el.ramka.hidden = true; el.wskazowka.hidden = true; el.btnLatarka.hidden = true;
+  el.zoom.hidden = true; el.btnObiektyw.hidden = true;
   el.btnStart.disabled = false;
   el.btnStart.querySelector('span').textContent = 'Włącz aparat';
   el.btnStart.classList.remove('drugi');
   if (skaner.wakeLock) { skaner.wakeLock.release().catch(() => {}); skaner.wakeLock = null; }
 }
+
+/**
+ * Aparat w wysokiej rozdzielczości. „zoom: true” prosi Chrome o zgodę na sterowanie przybliżeniem
+ * (bez niej telefon nie udostępnia zoomu); gdy się nie uda – zwykły aparat.
+ */
+async function otworzStrumien() {
+  const obiektyw = wczytaj(KLUCZE.obiektyw, '');
+  const rozdzielczosc = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+  const tylny = Object.assign({ facingMode: { ideal: 'environment' } }, rozdzielczosc);
+  const wybrany = obiektyw ? Object.assign({ deviceId: { exact: obiektyw } }, rozdzielczosc) : tylny;
+  const proby = [Object.assign({ zoom: true }, wybrany), wybrany];
+  if (obiektyw) proby.push(tylny);   // zapamiętanego obiektywu już nie ma
+  let blad = null;
+  for (const wideo of proby) {
+    try { return await navigator.mediaDevices.getUserMedia({ audio: false, video: wideo }); }
+    catch (e) { blad = e; if (e && e.name === 'NotAllowedError' && !('zoom' in wideo)) break; }
+  }
+  throw blad;
+}
+
+async function ustawSterowanie(sciezka) {
+  let m = {};
+  try { m = sciezka.getCapabilities ? sciezka.getCapabilities() : {}; } catch (e) { m = {}; }
+  skaner.mozliwosci = m;
+  el.btnLatarka.hidden = !m.torch;
+  if (!m.focusMode || m.focusMode.includes('continuous')) {
+    try { await sciezka.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) { /* nie każdy telefon */ }
+  }
+  // Przybliżenie: z większej odległości aparat łapie ostrość, a zoom powiększa kod.
+  const z = m.zoom;
+  const poziomy = z && z.max >= 1.5 ? POZIOMY_ZOOMU.filter(p => p >= (z.min || 1) && p <= z.max) : [];
+  el.zoom.innerHTML = poziomy.map(p => `<button type="button" role="radio" data-zoom="${p}">${String(p).replace('.', ',')}×</button>`).join('');
+  el.zoom.hidden = poziomy.length < 2;
+  el.wskazowka.textContent = el.zoom.hidden ? WSKAZOWKA : WSKAZOWKA_ZOOM;
+  if (!el.zoom.hidden) {
+    const zapisany = Number(wczytaj(KLUCZE.zoom, 2)) || 2;
+    const start = poziomy.reduce((a, b) => Math.abs(b - zapisany) < Math.abs(a - zapisany) ? b : a, poziomy[0]);
+    await ustawZoom(start, true);
+  }
+  // Kilka tylnych obiektywów (np. główny, szerokokątny, makro) – przycisk do przełączania.
+  skaner.obiektywy = await tylneObiektywy();
+  el.btnObiektyw.hidden = skaner.obiektywy.length < 2;
+}
+
+async function ustawZoom(poziom, cicho) {
+  const sciezka = skaner.strumien && skaner.strumien.getVideoTracks()[0];
+  if (!sciezka) return;
+  try {
+    await sciezka.applyConstraints({ advanced: [{ zoom: poziom }] });
+    el.zoom.querySelectorAll('button').forEach(b => {
+      const tak = Number(b.dataset.zoom) === poziom;
+      b.classList.toggle('wl', tak); b.setAttribute('aria-checked', tak);
+    });
+    zapisz(KLUCZE.zoom, poziom);
+  } catch (e) { if (!cicho) pokazToast('Nie udało się zmienić przybliżenia'); }
+}
+
+el.zoom.addEventListener('click', e => {
+  const b = e.target.closest('button[data-zoom]');
+  if (b) ustawZoom(Number(b.dataset.zoom));
+});
+
+async function tylneObiektywy() {
+  try {
+    const urz = await navigator.mediaDevices.enumerateDevices();
+    return urz.filter(u => u.kind === 'videoinput' && /back|rear|environment|tył|tyln/i.test(u.label || ''));
+  } catch (e) { return []; }
+}
+
+el.btnObiektyw.addEventListener('click', async () => {
+  const sciezka = skaner.strumien && skaner.strumien.getVideoTracks()[0];
+  const lista = skaner.obiektywy;
+  if (!sciezka || lista.length < 2) return;
+  const teraz = (sciezka.getSettings && sciezka.getSettings().deviceId) || '';
+  const i = lista.findIndex(u => u.deviceId === teraz);
+  const nastepny = lista[(i + 1) % lista.length];
+  zapisz(KLUCZE.obiektyw, nastepny.deviceId);
+  zatrzymajAparat();
+  await startAparatu();
+  pokazToast('Obiektyw ' + (lista.indexOf(nastepny) + 1) + ' z ' + lista.length + ' – zostaw ten, z którym kody czytają się najlepiej');
+});
+
+// Stuknięcie w obraz: wyostrzenie w tym miejscu (jeśli telefon na to pozwala).
+el.wideo.addEventListener('click', async e => {
+  if (!skaner.aktywny) return;
+  const r = el.wideo.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  el.fokus.style.left = px + 'px'; el.fokus.style.top = py + 'px';
+  el.fokus.classList.add('widoczny');
+  setTimeout(() => el.fokus.classList.remove('widoczny'), 700);
+  const sciezka = skaner.strumien && skaner.strumien.getVideoTracks()[0];
+  const tryby = skaner.mozliwosci.focusMode || [];
+  if (!sciezka || !tryby.length) return;
+  // obraz jest wykadrowany (object-fit: cover) – przeliczamy punkt na współrzędne klatki
+  const vw = el.wideo.videoWidth || r.width, vh = el.wideo.videoHeight || r.height;
+  const skala = Math.max(r.width / vw, r.height / vh);
+  const x = Math.min(1, Math.max(0, (px - (r.width - vw * skala) / 2) / (vw * skala)));
+  const y = Math.min(1, Math.max(0, (py - (r.height - vh * skala) / 2) / (vh * skala)));
+  const jednorazowo = tryby.includes('single-shot');
+  try {
+    await sciezka.applyConstraints({ advanced: [Object.assign({ pointsOfInterest: [{ x, y }] }, jednorazowo ? { focusMode: 'single-shot' } : {})] });
+    if (jednorazowo && tryby.includes('continuous')) {
+      setTimeout(() => { if (skaner.aktywny) sciezka.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {}); }, 2500);
+    }
+  } catch (err) { /* telefon nie obsługuje wyostrzania w punkcie */ }
+});
 
 async function przygotujDetektor() {
   if (skaner.detektor || skaner.zx) return;
@@ -937,7 +1180,7 @@ function dekodujZXing() {
   if (!v.videoWidth) return null;
   const sw = Math.round(v.videoWidth * 0.84), sh = Math.round(v.videoHeight * 0.42);
   const sx = Math.round((v.videoWidth - sw) / 2), sy = Math.round((v.videoHeight - sh) / 2);
-  const skala = Math.min(1, 800 / sw);
+  const skala = Math.min(1, 1200 / sw);
   plotno.width = Math.round(sw * skala); plotno.height = Math.round(sh * skala);
   const ctx = plotno.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(v, sx, sy, sw, sh, 0, 0, plotno.width, plotno.height);
@@ -967,6 +1210,9 @@ function obsluzKod(surowy) {
   const kod = String(surowy || '').replace(/\D/g, '');
   const teraz = Date.now();
   if (kod === skaner.ostatni.kod && teraz - skaner.ostatni.czas < 4000) { skaner.ostatni.czas = teraz; return; }
+  // Potwierdzenie: ten sam kod w dwóch kolejnych odczytach. Pojedyncze błędne odczyty (np. z nieostrej klatki) odpadają.
+  if (kod !== skaner.kandydat.kod || teraz - skaner.kandydat.czas > 1500) { skaner.kandydat = { kod, czas: teraz }; return; }
+  skaner.kandydat = { kod: '', czas: 0 };
   const isbn = normalizujIsbn(kod);
   if (!isbn) {
     if (teraz - skaner.ostrzezenie > 3500) {
